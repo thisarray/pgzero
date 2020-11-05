@@ -16,9 +16,8 @@ const test = (function () {
   function assertObjectEqual(first, second) {
     for (const key of Reflect.ownKeys(first)) {
       let name = key.toString();
-      if (Reflect.has(second, key)) {
-        console.assert(Reflect.get(first, key) === Reflect.get(second, key),
-                       `Property ${ name } differ!`);
+      if (key in second) {
+        console.assert(first[key] === second[key], `Property ${ name } differ!`);
       }
       else {
         console.assert(false, `Second object missing ${ name } property!`);

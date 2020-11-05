@@ -66,6 +66,11 @@ function test_construction_rect() {
   test.assertEqual(4, r2.height);
 }
 
+function test_toString() {
+  let r = new Rect(1, 2, 3, 4);
+  test.assertEqual(r.toString(), '{x: 1, y: 2, width: 3, height: 4}');
+}
+
 function test_calculated_attributes() {
   let r = new Rect(1, 2, 3, 4);
   test.assertEqual(r.left + r.width, r.right);
@@ -395,6 +400,15 @@ function test_collidepoint() {
                    "r collides with point (right-1,bottom)");
   test.assertFalse(r.collidepoint(r.right, r.bottom - 1),
                    "r collides with point (right,bottom-1)");
+}
+
+function test_collidepoint_arguments() {
+  let r = new Rect(1, 2, 3, 4);
+
+  test.assertFalse(r.collidepoint());
+  test.assertFalse(r.collidepoint(r.left));
+  test.assertTrue(r.collidepoint([r.left, r.top]));
+  test.assertTrue(r.collidepoint({x: r.left, y: r.top}));
 }
 
 /*
