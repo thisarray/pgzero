@@ -446,3 +446,405 @@ class Rect {
 Rect.prototype.toString = function () {
   return `{x: ${ this.x }, y: ${ this.y }, width: ${ this.width }, height: ${ this.height }}`;
 }
+
+/*
+ * The global screen object representing your game screen.
+ *
+ * It mimicks the Python object using Immediately Invoked Function Expression/Self-Executing Anonymous Function.
+ */
+const screen = (function () {
+  const DEFAULT_FONT = 'sans-serif';
+  const DEFAULT_FONT_SIZE = 24;
+  const DEFAULT_COLOR = 'white';
+  const MAX_COLOR = 255;
+  const TWO_PI = Math.PI * 2;
+  let context = null,
+      width = 300,
+      height = 150,
+      lastTimestamp = 0;
+
+  /*
+   * Parse a color given as a string or an Array of 3 Numbers.
+   */
+  function parseColor(color) {
+    if (typeof color === 'string') {
+      if (color.length < 3) {
+        return 'black';
+      }
+      else {
+        return color;
+      }
+    }
+    else {
+      let [r=0, g=0, b=0] = color;
+      r = Math.max(Math.min(r, MAX_COLOR), 0);
+      g = Math.max(Math.min(g, MAX_COLOR), 0);
+      b = Math.max(Math.min(b, MAX_COLOR), 0);
+      return `rgb(${ r }, ${ g }, ${ b })`;
+    }
+  }
+
+  /*
+   * The core game loop
+   */
+  function loop(timestamp) {
+    const elapsed = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+    window.update(elapsed);
+    window.draw();
+    window.requestAnimationFrame(loop);
+  }
+
+  return {
+    draw: {
+      line(start, end, color, width = 1) {
+        if (context == null) {
+          return;
+        }
+        context.save();
+        context.lineWidth = width;
+        context.strokeStyle = parseColor(color);
+
+        let x1, y1, x2, y2;
+        [x1=0, y1=0] = start;
+        [x2=0, y2=0] = end;
+        context.beginPath();
+        context.moveTo(x1, y1);
+        context.lineTo(x2, y2);
+        context.stroke();
+        context.restore();
+      },
+      circle(pos, radius, color, width = 1) {
+        if (context == null) {
+          return;
+        }
+        context.save();
+        context.lineWidth = width;
+        context.strokeStyle = parseColor(color);
+
+        let [x=0, y=0] = pos;
+        context.beginPath();
+        context.arc(x, y, radius, 0, TWO_PI, false);
+        context.stroke();
+        context.restore();
+      },
+      filled_circle(pos, radius, color) {
+        if (context == null) {
+          return;
+        }
+        context.save();
+        context.fillStyle = parseColor(color);
+
+        let [x=0, y=0] = pos;
+        context.beginPath();
+        context.arc(x, y, radius, 0, TWO_PI, false);
+        context.fill();
+        context.restore();
+      },
+      polygon(points, color) {
+        if (context == null) {
+          return;
+        }
+        context.save();
+        context.strokeStyle = parseColor(color);
+
+        context.beginPath();
+        let isFirst = true;
+        for (let point of points) {
+          let [x=0, y=0] = point;
+          if (isFirst) {
+            context.moveTo(x, y);
+          }
+          else {
+            context.lineTo(x, y);
+          }
+          isFirst = false;
+        }
+        // Explicitly close the polygon
+        context.closePath();
+        context.stroke();
+        context.restore();
+      },
+      filled_polygon(points, color) {
+        if (context == null) {
+          return;
+        }
+        context.save();
+        context.fillStyle = parseColor(color);
+
+        context.beginPath();
+        let isFirst = true;
+        for (let point of points) {
+          let [x=0, y=0] = point;
+          if (isFirst) {
+            context.moveTo(x, y);
+          }
+          else {
+            context.lineTo(x, y);
+          }
+          isFirst = false;
+        }
+        context.fill();
+        context.restore();
+      },
+      rect(rect, color, width = 1) {
+        if (!(rect instanceof Rect)) {
+          throw new TypeError('rect must be a Rect.');
+        }
+        if (context == null) {
+          return;
+        }
+        context.save();
+        context.lineWidth = width;
+        context.strokeStyle = parseColor(color);
+        context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+        context.restore();
+      },
+      filled_rect(rect, color) {
+        if (!(rect instanceof Rect)) {
+          throw new TypeError('rect must be a Rect.');
+        }
+        if (context == null) {
+          return;
+        }
+        context.save();
+        context.fillStyle = parseColor(color);
+        context.fillRect(rect.x, rect.y, rect.width, rect.height);
+        context.restore();
+      },
+      text(text, config) {
+        screen.draw.textbox(text, null, config);
+      },
+      textbox(text, rect, config) {
+        if (typeof text !== 'string') {
+          return;
+        }
+        context.save();
+
+        let fontsize = DEFAULT_FONT_SIZE,
+            fontname = DEFAULT_FONT,
+            color = DEFAULT_COLOR,
+            drawOutline = false,
+            gcolor, x, y;
+
+        if ('fontsize' in config) {
+          fontsize = config['fontsize'];
+        }
+        if ('fontname' in config) {
+          fontname = config['fontname'];
+        }
+        context.font = fontsize + 'px ' + fontname;
+
+        context.textAlign = 'left';
+        context.textBaseline = 'top';
+        if ('topleft' in config) {
+          [x=0, y=0] = config['topleft'];
+        }
+        else if ('midtop' in config) {
+          [x=0, y=0] = config['midtop'];
+          context.textAlign = 'center';
+          context.textBaseline = 'top';
+        }
+        else if ('topright' in config) {
+          [x=0, y=0] = config['topright'];
+          context.textAlign = 'right';
+          context.textBaseline = 'top';
+        }
+        else if ('midleft' in config) {
+          [x=0, y=0] = config['midleft'];
+          context.textAlign = 'left';
+          context.textBaseline = 'middle';
+        }
+        else if ('center' in config) {
+          [x=0, y=0] = config['center'];
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+        }
+        else if ('midright' in config) {
+          [x=0, y=0] = config['midright'];
+          context.textAlign = 'right';
+          context.textBaseline = 'middle';
+        }
+        else if ('bottomleft' in config) {
+          [x=0, y=0] = config['bottomleft'];
+          context.textAlign = 'left';
+          context.textBaseline = 'bottom';
+        }
+        else if ('midbottom' in config) {
+          [x=0, y=0] = config['midbottom'];
+          context.textAlign = 'center';
+          context.textBaseline = 'bottom';
+        }
+        else if ('bottomright' in config) {
+          [x=0, y=0] = config['bottomright'];
+          context.textAlign = 'right';
+          context.textBaseline = 'bottom';
+        }
+        else if ('pos' in config) {
+          [x=0, y=0] = config['pos'];
+        }
+
+        if ('color' in config) {
+          color = parseColor(config['color']);
+        }
+        if ('gcolor' in config) {
+          gcolor = parseColor(config['gcolor']);
+        }
+        if ('owidth' in config) {
+          drawOutline = true;
+          context.lineWidth = config['owidth'];
+          if ('ocolor' in config) {
+            context.strokeStyle = parseColor(config['ocolor']);
+          }
+        }
+        if ('shadow' in config) {
+          let [sdx=0, sdy=0] = config['shadow'];
+          context.shadowOffsetX = sdx;
+          context.shadowOffsetY = sdy;
+          if ('scolor' in config) {
+            context.shadowColor = parseColor(config['scolor']);
+          }
+        }
+
+        context.fillStyle = color;
+        let gradient;
+        if (rect instanceof Rect) {
+          while (fontsize > 0) {
+            let m = context.measureText(text);
+            if (m.width < rect.width) {
+              if (gcolor != null) {
+                // The linear gradient is dependent on the fontsize to determine the line height
+                if (context.textBaseline === 'bottom') {
+                  gradient = context.createLinearGradient(0, y - fontsize, 0, y);
+                }
+                else if (context.textBaseline === 'middle') {
+                  gradient = context.createLinearGradient(0, y - Math.floor(fontsize / 2), 0, y + Math.floor(fontsize / 2));
+                }
+                else {
+                  gradient = context.createLinearGradient(0, y, 0, y + fontsize);
+                }
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, gcolor);
+                context.fillStyle = gradient;
+              }
+
+              context.fillText(text, x, y);
+              if (drawOutline) {
+                context.strokeText(text, x, y);
+              }
+
+              break;
+            }
+            fontsize--;
+            context.font = fontsize + 'px ' + fontname;
+          }
+        }
+        else {
+          let i = 0;
+          for (let line of text.split('\n')) {
+            let line_y = y + (i * fontsize);
+
+            if (gcolor != null) {
+              // The linear gradient repeats for each line
+              if (context.textBaseline === 'bottom') {
+                gradient = context.createLinearGradient(0, line_y - fontsize, 0, line_y);
+              }
+              else if (context.textBaseline === 'middle') {
+                gradient = context.createLinearGradient(0, line_y - Math.floor(fontsize / 2), 0, line_y + Math.floor(fontsize / 2));
+              }
+              else {
+                gradient = context.createLinearGradient(0, line_y, 0, line_y + fontsize);
+              }
+              gradient.addColorStop(0, color);
+              gradient.addColorStop(1, gcolor);
+              context.fillStyle = gradient;
+            }
+
+            context.fillText(line, x, line_y);
+            if (drawOutline) {
+              context.strokeText(line, x, line_y);
+            }
+
+            i++;
+          }
+        }
+        context.restore();
+      }
+    },
+
+    /*
+     * Return a Rect representing the bounds of the screen.
+     */
+    bounds() {
+      return new Rect(0, 0, width, height);
+    },
+
+    /*
+     * Clear the screen to black.
+     */
+    clear() {
+      if (context == null) {
+        return;
+      }
+      context.clearRect(0, 0, width, height);
+      screen.fill('black');
+    },
+
+    /*
+     * Fill the screen with a colour.
+     */
+    fill(color, gcolor) {
+      if (context == null) {
+        return;
+      }
+      if (gcolor != null) {
+        let gradient = context.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, parseColor(color));
+        gradient.addColorStop(1, parseColor(gcolor));
+        context.fillStyle = gradient;
+      }
+      else {
+        context.fillStyle = parseColor(color);
+      }
+      context.fillRect(0, 0, width, height);
+    },
+
+    /*
+     * Draw image to the screen at the given position.
+     */
+    blit(image, pos) {
+      if (context == null) {
+        return;
+      }
+
+      let [x=0, y=0] = pos;
+      context.drawImage(image, x, y);
+    },
+
+    init(id) {
+      const canvas = document.querySelector(id);
+      if (!canvas.getContext) {
+        // If not the canvas element or Canvas API not supported
+        return;
+      }
+      if (window.TITLE) {
+        document.querySelector('title').innerText = window.TITLE;
+      }
+      if (window.WIDTH) {
+        width = canvas.width = window.WIDTH;
+      }
+      if (window.HEIGHT) {
+        height = canvas.height = window.HEIGHT;
+      }
+
+      context = canvas.getContext('2d');
+      lastTimestamp = 0;
+
+      if ((typeof window.update === 'function') &&
+          (typeof window.draw === 'function')) {
+        // Only run the core game loop if draw() and update() are defined
+        window.requestAnimationFrame(loop);
+      }
+    }
+  }
+})();
