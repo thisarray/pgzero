@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test image</title>
+  <script src="../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/alien.png" alt="alien">
+  <img class="hidden" src="images/expected_alien_blit.png" alt="expected_alien_blit">
+  <img class="hidden" src="images/expected_circle.png" alt="expected_circle">
+  <img class="hidden" src="images/expected_filled_circle.png" alt="expected_filled_circle">
+  <img class="hidden" src="images/expected_filled_polygon.png" alt="expected_filled_polygon">
+  <img class="hidden" src="images/expected_filled_rect.png" alt="expected_filled_rect">
+  <img class="hidden" src="images/expected_gradient.png" alt="expected_gradient">
+  <img class="hidden" src="images/expected_line.png" alt="expected_line">
+  <img class="hidden" src="images/expected_polygon.png" alt="expected_polygon">
+  <img class="hidden" src="images/expected_rect.png" alt="expected_rect">
+  <img class="hidden" src="images/expected_wrapped_gradient_text.png" alt="expected_wrapped_gradient_text">
+</section>
+
+<h1>Test image</h1>
+
+<canvas id="screen" width="200" height="100">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+
+<form>
+<label for="imageSelect">Choose an image: </label>
+<select id="imageSelect">
+  <option selected>None</option>
+  <option>alien</option>
+  <option>expected_alien_blit</option>
+  <option>expected_circle</option>
+  <option>expected_filled_circle</option>
+  <option>expected_filled_polygon</option>
+  <option>expected_filled_rect</option>
+  <option>expected_gradient</option>
+  <option>expected_line</option>
+  <option>expected_polygon</option>
+  <option>expected_rect</option>
+  <option>expected_wrapped_gradient_text</option>
+</select>
+</form>
+
+<script>
+const context = document.querySelector('#screen').getContext('2d');
+const select = document.querySelector('#imageSelect');
+select.addEventListener('change', (event) => {
+  context.clearRect(0, 0, 200, 100);
+  let name = event.target.value;
+  if (name in images) {
+    console.log(name);
+    context.drawImage(images[name], 0, 0);
+  }
+  else {
+    console.log(`"${ name }" is not in images.`);
+  }
+});
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader');
+  console.dir(images);
+});
+</script>
+</body>
+
+</html>

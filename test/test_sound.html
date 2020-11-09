@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test sound</title>
+  <script src="../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+ul {
+  list-style: none inside none;
+}
+li {
+  margin: 0.5em;
+}
+  </style>
+</head>
+
+<body>
+<section id="soundLoader" class="hidden">
+  <audio class="hidden" controls preload="auto" src="sounds/powerup.wav" id="powerup">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/vorbis1.ogg" id="vorbis1">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/vorbis2.oga" id="vorbis2">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav22k16bitpcm.wav" id="wav22k16bitpcm">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav22k8bitpcm.wav" id="wav22k8bitpcm">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav22kadpcm.wav" id="wav22kadpcm">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav22kgsm.wav" id="wav22kgsm">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav22kulaw.wav" id="wav22kulaw">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav8k16bitpcm.wav" id="wav8k16bitpcm">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav8k8bitpcm.wav" id="wav8k8bitpcm">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav8kadpcm.wav" id="wav8kadpcm">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav8kmp316.wav" id="wav8kmp316">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/wav8kmp38.wav" id="wav8kmp38">Your browser does not support the audio element.</audio>
+</section>
+
+<h1>Test sound</h1>
+
+<ul>
+  <li><button type="button" data-name="powerup">Play</button></li>
+  <li><button type="button" data-name="vorbis1">Play</button></li>
+  <li><button type="button" data-name="vorbis2">Play</button></li>
+  <li><button type="button" data-name="wav22k16bitpcm">Play</button></li>
+  <li><button type="button" data-name="wav22k8bitpcm">Play</button></li>
+  <li><button type="button" data-name="wav22kadpcm">Play</button></li>
+  <li><button type="button" data-name="wav22kgsm">Play</button></li>
+  <li><button type="button" data-name="wav22kulaw">Play</button></li>
+  <li><button type="button" data-name="wav8k16bitpcm">Play</button></li>
+  <li><button type="button" data-name="wav8k8bitpcm">Play</button></li>
+  <li><button type="button" data-name="wav8kadpcm">Play</button></li>
+  <li><button type="button" data-name="wav8kmp316">Play</button></li>
+  <li><button type="button" data-name="wav8kmp38">Play</button></li>
+</ul>
+
+<script>
+for (let button of Array.from(document.querySelectorAll('button'))) {
+  let name = button.dataset.name;
+  button.innerText = `Play ${ name }`;
+  button.addEventListener('click', (event) => {
+    console.log(name);
+    console.assert(name in sounds, `${ name } unexpectedly not in sounds`);
+    sounds[name].play();
+    event.preventDefault();
+  });
+}
+
+window.addEventListener('load', (event) => {
+  sounds.LOAD('#soundLoader');
+  console.dir(sounds);
+});
+</script>
+</body>
+
+</html>

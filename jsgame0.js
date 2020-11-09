@@ -447,6 +447,30 @@ Rect.prototype.toString = function () {
   return `{x: ${ this.x }, y: ${ this.y }, width: ${ this.width }, height: ${ this.height }}`;
 }
 
+const images = (function () {
+  return {
+    // Uppercase method names to avoid clashing with lowercase names of resources
+    LOAD(id) {
+      for (let e of Array.from(document.querySelector(id).querySelectorAll('img'))) {
+        let name = e.getAttribute('alt');
+        this[name] = e;
+      }
+    }
+  }
+})();
+
+const sounds = (function () {
+  return {
+    // Uppercase method names to avoid clashing with lowercase names of resources
+    LOAD(id) {
+      for (let e of Array.from(document.querySelector(id).querySelectorAll('audio'))) {
+        let name = e.id;
+        this[name] = e;
+      }
+    }
+  }
+})();
+
 /*
  * The global screen object representing your game screen.
  *
@@ -458,10 +482,6 @@ const screen = (function () {
   const DEFAULT_COLOR = 'white';
   const MAX_COLOR = 255;
   const TWO_PI = Math.PI * 2;
-  let context = null,
-      width = 300,
-      height = 150,
-      lastTimestamp = 0;
 
   /*
    * Parse a color given as a string or an Array of 3 Numbers.
@@ -484,15 +504,25 @@ const screen = (function () {
     }
   }
 
+  let context = null,
+      width = 300,
+      height = 150,
+      running = 0,
+      start;
+
   /*
    * The core game loop
    */
   function loop(timestamp) {
-    const elapsed = timestamp - lastTimestamp;
-    lastTimestamp = timestamp;
+    if (start == null) {
+      // For the first run of the game loop
+      start = timestamp;
+    }
+    const elapsed = timestamp - start;
+    start = timestamp;
     window.update(elapsed);
     window.draw();
-    window.requestAnimationFrame(loop);
+    running = window.requestAnimationFrame(loop);
   }
 
   return {
@@ -787,7 +817,7 @@ const screen = (function () {
         return;
       }
       context.clearRect(0, 0, width, height);
-      screen.fill('black');
+      this.fill('black');
     },
 
     /*
@@ -838,12 +868,12 @@ const screen = (function () {
       }
 
       context = canvas.getContext('2d');
-      lastTimestamp = 0;
+      start = undefined;
 
       if ((typeof window.update === 'function') &&
           (typeof window.draw === 'function')) {
         // Only run the core game loop if draw() and update() are defined
-        window.requestAnimationFrame(loop);
+        running = window.requestAnimationFrame(loop);
       }
     }
   }
