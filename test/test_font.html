@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test font</title>
+  <script src="../jsgame0.js"></script>
+  <script src="../test.js"></script>
+  <style type="text/css" media="screen">
+@font-face {
+  font-family: 'eunomia_regular';
+  src: url('fonts/eunomia_regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+body {
+  background-color: white;
+  color: black;
+}
+p {
+  box-sizing: border-box;
+  background-color: black;
+  color: red;
+  font-family: "eunomia_regular", ariel, sans-serif;
+  font-size: 24px;
+  width: 200px;
+  height: 100px;
+}
+  </style>
+</head>
+
+<body>
+
+<h1>Test font</h1>
+
+<h2>Paragraph</h2>
+
+<p>gradient
+<br>text</p>
+
+<h2>Expected</h2>
+
+<img src="images/expected_wrapped_gradient_text.png" alt="expected_wrapped_gradient_text" width="200" height="100">
+
+<h2>Actual</h2>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+
+<script>
+var WIDTH = 200;
+HEIGHT = 100;
+
+screen.init('#screen');
+const canvas = document.querySelector('#screen');
+
+/*
+ * Compare the current canvas to expected via an image/png data URL
+ */
+function assertCanvasEqual(expected) {
+  test.assertTrue(expected.startsWith('data:image/png;base64,'));
+//  console.log(canvas.toDataURL());
+  test.assertEqual(canvas.width, WIDTH);
+  test.assertEqual(canvas.height, HEIGHT);
+  test.assertEqual(canvas.toDataURL(), expected);
+}
+
+/*
+ * We can draw wrapped gradient text.
+ */
+function test_wrapped_gradient_text() {
+  const expected = 'data:image/png;base64,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';
+
+  for (const config of [
+    {pos: [0, 0], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: 'blue'},
+    {topleft: [0, 0], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: 'blue'},
+    {midleft: [0, 9], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: [0, 0, 255]},
+    {bottomleft: [0, 18], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: [0, 0, 255]}]) {
+    screen.clear()
+    screen.draw.text('gradient\ntext', config);
+    assertCanvasEqual(expected);
+  }
+}
+
+test.main();
+</script>
+</body>
+
+</html>

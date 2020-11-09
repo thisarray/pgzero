@@ -32,7 +32,7 @@ const canvas = document.querySelector('#screen');
 const yellow = [255, 255, 0];
 
 /*
- * Compare the current canvas to expected via an image/png data URI
+ * Compare the current canvas to expected via an image/png data URL
  */
 function assertCanvasEqual(expected) {
   test.assertTrue(expected.startsWith('data:image/png;base64,'));
