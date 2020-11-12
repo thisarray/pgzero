@@ -1,3 +1,702 @@
+const mouse = Object.freeze({
+  LEFT: 1,
+  MIDDLE: 4,
+  RIGHT: 2,
+  // Mouse wheel support is non-standard
+  // These map to the side buttons (back and forward) on a 5 button mouse
+  WHEEL_UP: 8,
+  WHEEL_DOWN: 16
+});
+
+/*
+ * Match each enum to the KeyboardEvent.code value.
+ *
+ * The shift version of keys are added as single character values.
+ */
+const keys = Object.freeze({
+  BACKSPACE: "Backspace",
+  TAB: "Tab",
+  CLEAR: "Clear",
+  RETURN: "Enter",
+  PAUSE: "Pause",
+  ESCAPE: "Escape",
+  SPACE: "Space",
+  EXCLAIM: "!",
+  QUOTEDBL: '"',
+  HASH: "#",
+  DOLLAR: "$",
+  AMPERSAND: "&",
+  QUOTE: "Quote",
+  LEFTPAREN: "(",
+  RIGHTPAREN: ")",
+  ASTERISK: "*",
+  PLUS: "+",
+  COMMA: "Comma",
+  MINUS: "Minus",
+  PERIOD: "Period",
+  SLASH: "Slash",
+  K_0: "Digit0",
+  K_1: "Digit1",
+  K_2: "Digit2",
+  K_3: "Digit3",
+  K_4: "Digit4",
+  K_5: "Digit5",
+  K_6: "Digit6",
+  K_7: "Digit7",
+  K_8: "Digit8",
+  K_9: "Digit9",
+  COLON: ":",
+  SEMICOLON: "Semicolon",
+  LESS: "<",
+  EQUALS: "Equal",
+  GREATER: ">",
+  QUESTION: "?",
+  AT: "@",
+  LEFTBRACKET: "BracketLeft",
+  BACKSLASH: "Backslash",
+  RIGHTBRACKET: "BracketRight",
+  CARET: "^",
+  UNDERSCORE: "_",
+  BACKQUOTE: "Backquote",
+  A: "KeyA",
+  B: "KeyB",
+  C: "KeyC",
+  D: "KeyD",
+  E: "KeyE",
+  F: "KeyF",
+  G: "KeyG",
+  H: "KeyH",
+  I: "KeyI",
+  J: "KeyJ",
+  K: "KeyK",
+  L: "KeyL",
+  M: "KeyM",
+  N: "KeyN",
+  O: "KeyO",
+  P: "KeyP",
+  Q: "KeyQ",
+  R: "KeyR",
+  S: "KeyS",
+  T: "KeyT",
+  U: "KeyU",
+  V: "KeyV",
+  W: "KeyW",
+  X: "KeyX",
+  Y: "KeyY",
+  Z: "KeyZ",
+  DELETE: "Delete",
+  KP0: "Numdpad0",
+  KP1: "Numdpad1",
+  KP2: "Numdpad2",
+  KP3: "Numdpad3",
+  KP4: "Numdpad4",
+  KP5: "Numdpad5",
+  KP6: "Numdpad6",
+  KP7: "Numdpad7",
+  KP8: "Numdpad8",
+  KP9: "Numdpad9",
+  KP_PERIOD: "NumdpadDecimal",
+  KP_DIVIDE: "NumdpadDivide",
+  KP_MULTIPLY: "NumdpadMultiply",
+  KP_MINUS: "NumdpadSubtract",
+  KP_PLUS: "NumdpadAdd",
+  KP_ENTER: "NumdpadEnter",
+  KP_EQUALS: "NumdpadEqual",
+  UP: "ArrowUp",
+  DOWN: "ArrowDown",
+  RIGHT: "ArrowRight",
+  LEFT: "ArrowLeft",
+  INSERT: "Insert",
+  HOME: "Home",
+  END: "End",
+  PAGEUP: "PageUp",
+  PAGEDOWN: "PageDown",
+  F1: "F1",
+  F2: "F2",
+  F3: "F3",
+  F4: "F4",
+  F5: "F5",
+  F6: "F6",
+  F7: "F7",
+  F8: "F8",
+  F9: "F9",
+  F10: "F10",
+  F11: "F11",
+  F12: "F12",
+  F13: "F13",
+  F14: "F14",
+  F15: "F15",
+  NUMLOCK: "NumLock",
+  CAPSLOCK: "Capslock",
+  SCROLLOCK: "ScrollLock",
+  RSHIFT: "ShiftRight",
+  LSHIFT: "ShiftLeft",
+  RCTRL: "ControlRight",
+  LCTRL: "ControlLeft",
+  RALT: "AltRight",
+  LALT: "AltLeft",
+  RMETA: "MetaRight",
+  LMETA: "MetaLeft",
+  LSUPER: "OSLeft",
+  RSUPER: "OSRight",
+  MODE: "KanaMode",
+  HELP: "Help",
+  PRINT: "PrintScreen",
+  SYSREQ: "SysReq",
+  BREAK: "Break",
+  MENU: "ContextMenu",
+  POWER: "Power",
+  EURO: "Euro",
+  LAST: "Last"
+});
+
+const keymods = Object.freeze({
+  LSHIFT: 1,
+  RSHIFT: 2,
+  SHIFT: 4,
+  LCTRL: 8,
+  RCTRL: 16,
+  CTRL: 32,
+  LALT: 64,
+  RALT: 128,
+  ALT: 256,
+  LMETA: 512,
+  RMETA: 1024,
+  META: 2048,
+  NUM: 4096,
+  CAPS: 8192,
+  MODE: 16384
+});
+
+const keyboard = (function () {
+  /*
+   * Set of keys that map to multiple characters.
+   *
+   * For example, 1 and !, 2 and @, / and ?.
+   */
+  const DUAL_SET = new Set();
+  for (const k of Reflect.ownKeys(keys)) {
+    let v = keys[k];
+    if ((typeof v === 'string') && (v.length === 1)) {
+      DUAL_SET.add(v);
+    }
+  }
+
+  /*
+   * Set of keys currently being pressed.
+   */
+  const KEY_SET = new Set();
+
+  return {
+    /*
+     * Return the value of the key that was pressed in event.
+     */
+    _lookup(event) {
+      if (DUAL_SET.has(event.key)) {
+        // If the key maps to multiple characters depending on SHIFT
+        return event.key;
+      }
+      return event.code;
+    },
+
+    /*
+     * Record the key that was pressed in event.
+     */
+    _press(event) {
+      if (DUAL_SET.has(event.key)) {
+        // If the key maps to multiple characters depending on SHIFT
+        KEY_SET.add(event.key);
+      }
+      KEY_SET.add(event.code);
+    },
+
+    /*
+     * Erase the key that was released in event.
+     */
+    _release(event) {
+      KEY_SET.delete(event.key);
+      KEY_SET.delete(event.code);
+    },
+
+    /*
+     * Return a bitmask of modifier keys that were depressed.
+     *
+     * There is no way to tell if Num Lock or Caps Lock are on or off.
+     * So they are omitted.
+     */
+    get bitmask() {
+      let bitmask = 0;
+      if (KEY_SET.has(keys.LSHIFT)) {
+        bitmask |= keymods.LSHIFT;
+        bitmask |= keymods.SHIFT;
+      }
+      if (KEY_SET.has(keys.RSHIFT)) {
+        bitmask |= keymods.RSHIFT;
+        bitmask |= keymods.SHIFT;
+      }
+      if (KEY_SET.has(keys.LCTRL)) {
+        bitmask |= keymods.LCTRL;
+        bitmask |= keymods.CTRL;
+      }
+      if (KEY_SET.has(keys.RCTRL)) {
+        bitmask |= keymods.RCTRL;
+        bitmask |= keymods.CTRL;
+      }
+      if (KEY_SET.has(keys.LALT)) {
+        bitmask |= keymods.LALT;
+        bitmask |= keymods.ALT;
+      }
+      if (KEY_SET.has(keys.RALT)) {
+        bitmask |= keymods.RALT;
+        bitmask |= keymods.ALT;
+      }
+      if (KEY_SET.has(keys.LMETA)) {
+        bitmask |= keymods.LMETA;
+        bitmask |= keymods.META;
+      }
+      if (KEY_SET.has(keys.RMETA)) {
+        bitmask |= keymods.RMETA;
+        bitmask |= keymods.META;
+      }
+      if (KEY_SET.has(keys.MODE)) {
+        bitmask |= keymods.MODE;
+      }
+
+      return bitmask;
+    },
+
+    /*
+     * Alias the enum values as getters.
+     */
+    get [keys.BACKSPACE]() {
+      return KEY_SET.has(keys.BACKSPACE);
+    },
+    get [keys.TAB]() {
+      return KEY_SET.has(keys.TAB);
+    },
+    get [keys.CLEAR]() {
+      return KEY_SET.has(keys.CLEAR);
+    },
+    get [keys.RETURN]() {
+      return KEY_SET.has(keys.RETURN);
+    },
+    get [keys.PAUSE]() {
+      return KEY_SET.has(keys.PAUSE);
+    },
+    get [keys.ESCAPE]() {
+      return KEY_SET.has(keys.ESCAPE);
+    },
+    get [keys.SPACE]() {
+      return KEY_SET.has(keys.SPACE);
+    },
+    get [keys.EXCLAIM]() {
+      return KEY_SET.has(keys.EXCLAIM);
+    },
+    get [keys.QUOTEDBL]() {
+      return KEY_SET.has(keys.QUOTEDBL);
+    },
+    get [keys.HASH]() {
+      return KEY_SET.has(keys.HASH);
+    },
+    get [keys.DOLLAR]() {
+      return KEY_SET.has(keys.DOLLAR);
+    },
+    get [keys.AMPERSAND]() {
+      return KEY_SET.has(keys.AMPERSAND);
+    },
+    get [keys.QUOTE]() {
+      return KEY_SET.has(keys.QUOTE);
+    },
+    get [keys.LEFTPAREN]() {
+      return KEY_SET.has(keys.LEFTPAREN);
+    },
+    get [keys.RIGHTPAREN]() {
+      return KEY_SET.has(keys.RIGHTPAREN);
+    },
+    get [keys.ASTERISK]() {
+      return KEY_SET.has(keys.ASTERISK);
+    },
+    get [keys.PLUS]() {
+      return KEY_SET.has(keys.PLUS);
+    },
+    get [keys.COMMA]() {
+      return KEY_SET.has(keys.COMMA);
+    },
+    get [keys.MINUS]() {
+      return KEY_SET.has(keys.MINUS);
+    },
+    get [keys.PERIOD]() {
+      return KEY_SET.has(keys.PERIOD);
+    },
+    get [keys.SLASH]() {
+      return KEY_SET.has(keys.SLASH);
+    },
+    get [keys.K_0]() {
+      return KEY_SET.has(keys.K_0);
+    },
+    get [keys.K_1]() {
+      return KEY_SET.has(keys.K_1);
+    },
+    get [keys.K_2]() {
+      return KEY_SET.has(keys.K_2);
+    },
+    get [keys.K_3]() {
+      return KEY_SET.has(keys.K_3);
+    },
+    get [keys.K_4]() {
+      return KEY_SET.has(keys.K_4);
+    },
+    get [keys.K_5]() {
+      return KEY_SET.has(keys.K_5);
+    },
+    get [keys.K_6]() {
+      return KEY_SET.has(keys.K_6);
+    },
+    get [keys.K_7]() {
+      return KEY_SET.has(keys.K_7);
+    },
+    get [keys.K_8]() {
+      return KEY_SET.has(keys.K_8);
+    },
+    get [keys.K_9]() {
+      return KEY_SET.has(keys.K_9);
+    },
+    get [keys.COLON]() {
+      return KEY_SET.has(keys.COLON);
+    },
+    get [keys.SEMICOLON]() {
+      return KEY_SET.has(keys.SEMICOLON);
+    },
+    get [keys.LESS]() {
+      return KEY_SET.has(keys.LESS);
+    },
+    get [keys.EQUALS]() {
+      return KEY_SET.has(keys.EQUALS);
+    },
+    get [keys.GREATER]() {
+      return KEY_SET.has(keys.GREATER);
+    },
+    get [keys.QUESTION]() {
+      return KEY_SET.has(keys.QUESTION);
+    },
+    get [keys.AT]() {
+      return KEY_SET.has(keys.AT);
+    },
+    get [keys.LEFTBRACKET]() {
+      return KEY_SET.has(keys.LEFTBRACKET);
+    },
+    get [keys.BACKSLASH]() {
+      return KEY_SET.has(keys.BACKSLASH);
+    },
+    get [keys.RIGHTBRACKET]() {
+      return KEY_SET.has(keys.RIGHTBRACKET);
+    },
+    get [keys.CARET]() {
+      return KEY_SET.has(keys.CARET);
+    },
+    get [keys.UNDERSCORE]() {
+      return KEY_SET.has(keys.UNDERSCORE);
+    },
+    get [keys.BACKQUOTE]() {
+      return KEY_SET.has(keys.BACKQUOTE);
+    },
+    get [keys.A]() {
+      return KEY_SET.has(keys.A);
+    },
+    get [keys.B]() {
+      return KEY_SET.has(keys.B);
+    },
+    get [keys.C]() {
+      return KEY_SET.has(keys.C);
+    },
+    get [keys.D]() {
+      return KEY_SET.has(keys.D);
+    },
+    get [keys.E]() {
+      return KEY_SET.has(keys.E);
+    },
+    get [keys.F]() {
+      return KEY_SET.has(keys.F);
+    },
+    get [keys.G]() {
+      return KEY_SET.has(keys.G);
+    },
+    get [keys.H]() {
+      return KEY_SET.has(keys.H);
+    },
+    get [keys.I]() {
+      return KEY_SET.has(keys.I);
+    },
+    get [keys.J]() {
+      return KEY_SET.has(keys.J);
+    },
+    get [keys.K]() {
+      return KEY_SET.has(keys.K);
+    },
+    get [keys.L]() {
+      return KEY_SET.has(keys.L);
+    },
+    get [keys.M]() {
+      return KEY_SET.has(keys.M);
+    },
+    get [keys.N]() {
+      return KEY_SET.has(keys.N);
+    },
+    get [keys.O]() {
+      return KEY_SET.has(keys.O);
+    },
+    get [keys.P]() {
+      return KEY_SET.has(keys.P);
+    },
+    get [keys.Q]() {
+      return KEY_SET.has(keys.Q);
+    },
+    get [keys.R]() {
+      return KEY_SET.has(keys.R);
+    },
+    get [keys.S]() {
+      return KEY_SET.has(keys.S);
+    },
+    get [keys.T]() {
+      return KEY_SET.has(keys.T);
+    },
+    get [keys.U]() {
+      return KEY_SET.has(keys.U);
+    },
+    get [keys.V]() {
+      return KEY_SET.has(keys.V);
+    },
+    get [keys.W]() {
+      return KEY_SET.has(keys.W);
+    },
+    get [keys.X]() {
+      return KEY_SET.has(keys.X);
+    },
+    get [keys.Y]() {
+      return KEY_SET.has(keys.Y);
+    },
+    get [keys.Z]() {
+      return KEY_SET.has(keys.Z);
+    },
+    get [keys.DELETE]() {
+      return KEY_SET.has(keys.DELETE);
+    },
+    get [keys.KP0]() {
+      return KEY_SET.has(keys.KP0);
+    },
+    get [keys.KP1]() {
+      return KEY_SET.has(keys.KP1);
+    },
+    get [keys.KP2]() {
+      return KEY_SET.has(keys.KP2);
+    },
+    get [keys.KP3]() {
+      return KEY_SET.has(keys.KP3);
+    },
+    get [keys.KP4]() {
+      return KEY_SET.has(keys.KP4);
+    },
+    get [keys.KP5]() {
+      return KEY_SET.has(keys.KP5);
+    },
+    get [keys.KP6]() {
+      return KEY_SET.has(keys.KP6);
+    },
+    get [keys.KP7]() {
+      return KEY_SET.has(keys.KP7);
+    },
+    get [keys.KP8]() {
+      return KEY_SET.has(keys.KP8);
+    },
+    get [keys.KP9]() {
+      return KEY_SET.has(keys.KP9);
+    },
+    get [keys.KP_PERIOD]() {
+      return KEY_SET.has(keys.KP_PERIOD);
+    },
+    get [keys.KP_DIVIDE]() {
+      return KEY_SET.has(keys.KP_DIVIDE);
+    },
+    get [keys.KP_MULTIPLY]() {
+      return KEY_SET.has(keys.KP_MULTIPLY);
+    },
+    get [keys.KP_MINUS]() {
+      return KEY_SET.has(keys.KP_MINUS);
+    },
+    get [keys.KP_PLUS]() {
+      return KEY_SET.has(keys.KP_PLUS);
+    },
+    get [keys.KP_ENTER]() {
+      return KEY_SET.has(keys.KP_ENTER);
+    },
+    get [keys.KP_EQUALS]() {
+      return KEY_SET.has(keys.KP_EQUALS);
+    },
+    get [keys.UP]() {
+      return KEY_SET.has(keys.UP);
+    },
+    get [keys.DOWN]() {
+      return KEY_SET.has(keys.DOWN);
+    },
+    get [keys.RIGHT]() {
+      return KEY_SET.has(keys.RIGHT);
+    },
+    get [keys.LEFT]() {
+      return KEY_SET.has(keys.LEFT);
+    },
+    get [keys.INSERT]() {
+      return KEY_SET.has(keys.INSERT);
+    },
+    get [keys.HOME]() {
+      return KEY_SET.has(keys.HOME);
+    },
+    get [keys.END]() {
+      return KEY_SET.has(keys.END);
+    },
+    get [keys.PAGEUP]() {
+      return KEY_SET.has(keys.PAGEUP);
+    },
+    get [keys.PAGEDOWN]() {
+      return KEY_SET.has(keys.PAGEDOWN);
+    },
+    get [keys.F1]() {
+      return KEY_SET.has(keys.F1);
+    },
+    get [keys.F2]() {
+      return KEY_SET.has(keys.F2);
+    },
+    get [keys.F3]() {
+      return KEY_SET.has(keys.F3);
+    },
+    get [keys.F4]() {
+      return KEY_SET.has(keys.F4);
+    },
+    get [keys.F5]() {
+      return KEY_SET.has(keys.F5);
+    },
+    get [keys.F6]() {
+      return KEY_SET.has(keys.F6);
+    },
+    get [keys.F7]() {
+      return KEY_SET.has(keys.F7);
+    },
+    get [keys.F8]() {
+      return KEY_SET.has(keys.F8);
+    },
+    get [keys.F9]() {
+      return KEY_SET.has(keys.F9);
+    },
+    get [keys.F10]() {
+      return KEY_SET.has(keys.F10);
+    },
+    get [keys.F11]() {
+      return KEY_SET.has(keys.F11);
+    },
+    get [keys.F12]() {
+      return KEY_SET.has(keys.F12);
+    },
+    get [keys.F13]() {
+      return KEY_SET.has(keys.F13);
+    },
+    get [keys.F14]() {
+      return KEY_SET.has(keys.F14);
+    },
+    get [keys.F15]() {
+      return KEY_SET.has(keys.F15);
+    },
+    get [keys.NUMLOCK]() {
+      return KEY_SET.has(keys.NUMLOCK);
+    },
+    get [keys.CAPSLOCK]() {
+      return KEY_SET.has(keys.CAPSLOCK);
+    },
+    get [keys.SCROLLOCK]() {
+      return KEY_SET.has(keys.SCROLLOCK);
+    },
+    get [keys.RSHIFT]() {
+      return KEY_SET.has(keys.RSHIFT);
+    },
+    get [keys.LSHIFT]() {
+      return KEY_SET.has(keys.LSHIFT);
+    },
+    get [keys.RCTRL]() {
+      return KEY_SET.has(keys.RCTRL);
+    },
+    get [keys.LCTRL]() {
+      return KEY_SET.has(keys.LCTRL);
+    },
+    get [keys.RALT]() {
+      return KEY_SET.has(keys.RALT);
+    },
+    get [keys.LALT]() {
+      return KEY_SET.has(keys.LALT);
+    },
+    get [keys.RMETA]() {
+      return KEY_SET.has(keys.RMETA);
+    },
+    get [keys.LMETA]() {
+      return KEY_SET.has(keys.LMETA);
+    },
+    get [keys.LSUPER]() {
+      return KEY_SET.has(keys.LSUPER);
+    },
+    get [keys.RSUPER]() {
+      return KEY_SET.has(keys.RSUPER);
+    },
+    get [keys.MODE]() {
+      return KEY_SET.has(keys.MODE);
+    },
+    get [keys.HELP]() {
+      return KEY_SET.has(keys.HELP);
+    },
+    get [keys.PRINT]() {
+      return KEY_SET.has(keys.PRINT);
+    },
+    get [keys.SYSREQ]() {
+      return KEY_SET.has(keys.SYSREQ);
+    },
+    get [keys.BREAK]() {
+      return KEY_SET.has(keys.BREAK);
+    },
+    get [keys.MENU]() {
+      return KEY_SET.has(keys.MENU);
+    },
+    get [keys.POWER]() {
+      return KEY_SET.has(keys.POWER);
+    },
+    get [keys.EURO]() {
+      return KEY_SET.has(keys.EURO);
+    },
+    get [keys.LAST]() {
+      return KEY_SET.has(keys.LAST);
+    }
+  }
+})();
+
+const images = (function () {
+  return {
+    // Uppercase method names to avoid clashing with lowercase names of resources
+    LOAD(selector) {
+      for (let e of Array.from(document.querySelectorAll(selector))) {
+        let name = e.getAttribute('alt');
+        this[name] = e;
+      }
+    }
+  }
+})();
+
+const sounds = (function () {
+  return {
+    // Uppercase method names to avoid clashing with lowercase names of resources
+    LOAD(selector) {
+      for (let e of Array.from(document.querySelectorAll(selector))) {
+        let name = e.id;
+        this[name] = e;
+      }
+    }
+  }
+})();
+
 /*
  * The humble Rect class, the heart of the implementation.
  */
@@ -446,30 +1145,6 @@ class Rect {
 Rect.prototype.toString = function () {
   return `{x: ${ this.x }, y: ${ this.y }, width: ${ this.width }, height: ${ this.height }}`;
 }
-
-const images = (function () {
-  return {
-    // Uppercase method names to avoid clashing with lowercase names of resources
-    LOAD(id) {
-      for (let e of Array.from(document.querySelector(id).querySelectorAll('img'))) {
-        let name = e.getAttribute('alt');
-        this[name] = e;
-      }
-    }
-  }
-})();
-
-const sounds = (function () {
-  return {
-    // Uppercase method names to avoid clashing with lowercase names of resources
-    LOAD(id) {
-      for (let e of Array.from(document.querySelector(id).querySelectorAll('audio'))) {
-        let name = e.id;
-        this[name] = e;
-      }
-    }
-  }
-})();
 
 /*
  * The global screen object representing your game screen.
