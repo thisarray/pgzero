@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test the Actor class</title>
+  <script src="../jsgame0.js"></script>
+  <script src="../test.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/alien.png" alt="alien">
+</section>
+
+<h1>Test the Actor class</h1>
+
+<script>
+function test_sensible_init_defaults() {
+  let a = new Actor('alien');
+  test.assertEqual(a.name, 'alien');
+  test.assertEqual(a.angle, 0);
+  test.assertEqual(a.topleft, [0, 0]);
+  test.assertEqual(a.width, images['alien'].width);
+  test.assertEqual(a.height, images['alien'].height);
+
+  test.assertEqual(a.anchor, 'center');
+  test.assertEqual(a.pos, [Math.floor(images['alien'].width / 2), Math.floor(images['alien'].height / 2)]);
+}
+
+function test_setting_absolute_initial_pos() {
+  let a = new Actor('alien');
+  a.anchor = 'bottomright';
+  a.pos = [100, 200];
+  test.assertEqual(a.name, 'alien');
+  test.assertEqual(a.angle, 0);
+  test.assertEqual(a.topleft, [100 - a.width, 200 - a.height]);
+
+  test.assertEqual(a.anchor, 'bottomright');
+  test.assertEqual(a.pos, [100, 200]);
+}
+
+function test_setting_relative_initial_pos_topleft() {
+  let a = new Actor('alien');
+  a.anchor = 'topleft';
+  a.pos = [500, 500];
+  test.assertEqual(a.name, 'alien');
+  test.assertEqual(a.angle, 0);
+  test.assertEqual(a.topleft, [500, 500]);
+
+  test.assertEqual(a.anchor, 'topleft');
+  test.assertEqual(a.pos, [500, 500]);
+}
+
+function test_setting_relative_initial_pos_center() {
+  let a = new Actor('alien');
+  a.anchor = 'center';
+  a.pos = [500, 500];
+  test.assertEqual(a.name, 'alien');
+  test.assertEqual(a.angle, 0);
+  test.assertEqual(a.topleft, [500 - Math.floor(a.width / 2), 500 - Math.floor(a.height / 2)]);
+  test.assertEqual(a.center, [500, 500]);
+
+  test.assertEqual(a.anchor, 'center');
+  test.assertEqual(a.pos, [500, 500]);
+}
+
+function test_setting_relative_initial_pos_bottomright() {
+  let a = new Actor('alien');
+  a.anchor = 'bottomright';
+  a.pos = [500, 500];
+  test.assertEqual(a.name, 'alien');
+  test.assertEqual(a.angle, 0);
+  test.assertEqual(a.topleft, [500 - a.width, 500 - a.height]);
+  test.assertEqual(a.bottomright, [500, 500]);
+
+  test.assertEqual(a.anchor, 'bottomright');
+  test.assertEqual(a.pos, [500, 500]);
+}
+
+function test_destructuring() {
+  let a = new Actor('alien'),
+      {x, y, width, height} = a;
+  test.assertEqual(x, 0);
+  test.assertEqual(y, 0);
+  test.assertEqual(width, images['alien'].width);
+  test.assertEqual(height, images['alien'].height);
+}
+
+function test_Rect_from_Actor() {
+  let a = new Actor('alien'),
+      r = new Rect(a);
+  test.assertEqual(r.x, 0);
+  test.assertEqual(r.y, 0);
+  test.assertEqual(r.width, images['alien'].width);
+  test.assertEqual(r.height, images['alien'].height);
+}
+
+function test_calculated_attributes() {
+  let a = new Actor('alien');
+  test.assertEqual(a.left + a.width, a.right);
+  test.assertEqual(a.top + a.height, a.bottom);
+  test.assertEqual([a.width, a.height], a.size);
+  test.assertEqual([a.left, a.top], a.topleft);
+  test.assertEqual([a.right, a.top], a.topright);
+  test.assertEqual([a.left, a.bottom], a.bottomleft);
+  test.assertEqual([a.right, a.bottom], a.bottomright);
+
+  let midx = a.left + Math.floor(a.width / 2),
+      midy = a.top + Math.floor(a.height / 2);
+
+  test.assertEqual(midx, a.centerx);
+  test.assertEqual(midy, a.centery);
+  test.assertEqual([a.centerx, a.centery], a.center);
+  test.assertEqual([a.centerx, a.top], a.midtop);
+  test.assertEqual([a.centerx, a.bottom], a.midbottom);
+  test.assertEqual([a.left, a.centery], a.midleft);
+  test.assertEqual([a.right, a.centery], a.midright);
+}
+
+function test_left() {
+  let a = new Actor('alien'),
+      new_left = 10;
+
+  a.left = new_left;
+  test.assertEqual(new_left, a.left);
+  test.assertEqual(new Rect(new_left, 0, a.width, a.height), a);
+}
+
+function test_right() {
+  let a = new Actor('alien'),
+      new_right = a.right + 20,
+      expected_left = a.left + 20,
+      old_width = a.width;
+
+  a.right = new_right;
+  test.assertEqual(new_right, a.right);
+  test.assertEqual(expected_left, a.left);
+  test.assertEqual(old_width, a.width);
+}
+
+function test_top() {
+  let a = new Actor('alien'),
+      new_top = 10;
+
+  a.top = new_top;
+  test.assertEqual(new Rect(0, new_top, a.width, a.height), a);
+  test.assertEqual(new_top, a.top);
+}
+
+function test_bottom() {
+  let a = new Actor('alien'),
+      new_bottom = a.bottom + 20,
+      expected_top = a.top + 20,
+      old_height = a.height;
+
+  a.bottom = new_bottom;
+  test.assertEqual(new_bottom, a.bottom);
+  test.assertEqual(expected_top, a.top);
+  test.assertEqual(old_height, a.height);
+}
+
+function test_centerx() {
+  let a = new Actor('alien'),
+      new_centerx = a.centerx + 20,
+      expected_left = a.left + 20,
+      old_width = a.width;
+
+  a.centerx = new_centerx;
+  test.assertEqual(new_centerx, a.centerx);
+  test.assertEqual(expected_left, a.left);
+  test.assertEqual(old_width, a.width);
+}
+
+function test_centery() {
+  let a = new Actor('alien'),
+      new_centery = a.centery + 20,
+      expected_top = a.top + 20,
+      old_height = a.height;
+
+  a.centery = new_centery;
+  test.assertEqual(new_centery, a.centery);
+  test.assertEqual(expected_top, a.top);
+  test.assertEqual(old_height, a.height);
+}
+
+function test_topleft() {
+  let a = new Actor('alien'),
+      new_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.topleft = new_topleft;
+  test.assertEqual(new_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_bottomleft() {
+  let a = new Actor('alien'),
+      new_bottomleft = [a.left + 20, a.bottom + 30],
+      expected_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.bottomleft = new_bottomleft;
+  test.assertEqual(new_bottomleft, a.bottomleft);
+  test.assertEqual(expected_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_topright() {
+  let a = new Actor('alien'),
+      new_topright = [a.right + 20, a.top + 30],
+      expected_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.topright = new_topright;
+  test.assertEqual(new_topright, a.topright);
+  test.assertEqual(expected_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_bottomright() {
+  let a = new Actor('alien'),
+      new_bottomright = [a.right + 20, a.bottom + 30],
+      expected_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.bottomright = new_bottomright;
+  test.assertEqual(new_bottomright, a.bottomright);
+  test.assertEqual(expected_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_center() {
+  let a = new Actor('alien'),
+      new_center = [a.centerx + 20, a.centery + 30],
+      expected_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.center = new_center;
+  test.assertEqual(new_center, a.center);
+  test.assertEqual(expected_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_midleft() {
+  let a = new Actor('alien'),
+      new_midleft = [a.left + 20, a.centery + 30],
+      expected_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.midleft = new_midleft;
+  test.assertEqual(new_midleft, a.midleft);
+  test.assertEqual(expected_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_midright() {
+  let a = new Actor('alien'),
+      new_midright = [a.right + 20, a.centery + 30],
+      expected_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.midright = new_midright;
+  test.assertEqual(new_midright, a.midright);
+  test.assertEqual(expected_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_midtop() {
+  let a = new Actor('alien'),
+      new_midtop = [a.centerx + 20, a.top + 30],
+      expected_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.midtop = new_midtop;
+  test.assertEqual(new_midtop, a.midtop);
+  test.assertEqual(expected_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_midbottom() {
+  let a = new Actor('alien'),
+      new_midbottom = [a.centerx + 20, a.bottom + 30],
+      expected_topleft = [a.left + 20, a.top + 30],
+      old_size = a.size;
+
+  a.midbottom = new_midbottom;
+  test.assertEqual(new_midbottom, a.midbottom);
+  test.assertEqual(expected_topleft, a.topleft);
+  test.assertEqual(old_size, a.size);
+}
+
+function test_contains() {
+  let a = new Actor('alien');
+
+  test.assertTrue(a.contains(new Rect(2, 3, 1, 1)),
+                  "a does not contain Rect(2,3,1,1)");
+  test.assertTrue(a.contains(new Rect(a)),
+                  "a does not contain the same rect as itself");
+  test.assertTrue(a.contains(new Rect(2, 3, 0, 0)),
+                  "a does not contain an empty rect within its bounds");
+  test.assertFalse(a.contains(new Rect(100, 0, 1, 2)),
+                   "a contains Rect(100,0,1,2)");
+  test.assertFalse(a.contains(new Rect(4, 106, 1, 1)),
+                   "a contains Rect(4,106,1,1)");
+  test.assertFalse(a.contains(new Rect(4, 106, 0, 0)),
+                   "a contains Rect(4,106,0,0)");
+}
+
+function test_collidepoint() {
+  let a = new Actor('alien');
+
+  test.assertTrue(a.collidepoint(a.left, a.top),
+                  "a does not collide with point (left,top)");
+  test.assertFalse(a.collidepoint(a.left - 1, a.top),
+                   "a collides with point (left-1,top)");
+  test.assertFalse(a.collidepoint(a.left, a.top - 1),
+                   "a collides with point (left,top-1)");
+  test.assertFalse(a.collidepoint(a.left - 1, a.top - 1),
+                   "a collides with point (left-1,top-1)");
+
+  test.assertTrue(a.collidepoint(a.right - 1, a.bottom - 1),
+                  "a does not collide with point (right-1,bottom-1)");
+  test.assertFalse(a.collidepoint(a.right, a.bottom),
+                   "a collides with point (right,bottom)");
+  test.assertFalse(a.collidepoint(a.right - 1, a.bottom),
+                   "a collides with point (right-1,bottom)");
+  test.assertFalse(a.collidepoint(a.right, a.bottom - 1),
+                   "a collides with point (right,bottom-1)");
+}
+
+function test_collidepoint_arguments() {
+  let a = new Actor('alien');
+
+  test.assertFalse(a.collidepoint());
+  test.assertFalse(a.collidepoint(a.left));
+  test.assertTrue(a.collidepoint([a.left, a.top]));
+  test.assertTrue(a.collidepoint({x: a.left, y: a.top}));
+}
+
+function test_angle_to() {
+  let a = new Actor('alien');
+  test.assertEqual(a.angle_to([33, 46]), 0);
+  test.assertEqual(a.angle_to([34, 46]), 0);
+  test.assertEqual(a.angle_to([34, 45]), 45);
+  test.assertEqual(a.angle_to([33, 45]), 90);
+  test.assertEqual(a.angle_to([32, 45]), 135);
+  test.assertEqual(a.angle_to([32, 46]), 180);
+  test.assertEqual(a.angle_to([32, 47]), -135);
+  test.assertEqual(a.angle_to([33, 47]), -90);
+  test.assertEqual(a.angle_to([34, 47]), -45);
+
+  test.assertEqual(a.angle_to({x: 33, y: 46}), 0);
+  test.assertEqual(a.angle_to({x: 34, y: 46}), 0);
+  test.assertEqual(a.angle_to({x: 34, y: 45}), 45);
+  test.assertEqual(a.angle_to({x: 33, y: 45}), 90);
+  test.assertEqual(a.angle_to({x: 32, y: 45}), 135);
+  test.assertEqual(a.angle_to({x: 32, y: 46}), 180);
+  test.assertEqual(a.angle_to({x: 32, y: 47}), -135);
+  test.assertEqual(a.angle_to({x: 33, y: 47}), -90);
+  test.assertEqual(a.angle_to({x: 34, y: 47}), -45);
+
+  test.assertEqual(a.angle_to([36, 50]), Math.atan2(-4, 3) * 180 / Math.PI);
+  test.assertEqual(a.angle_to(a), 0);
+}
+
+function test_distance_to() {
+  let a = new Actor('alien');
+  test.assertEqual(a.distance_to([33, 46]), 0);
+  test.assertEqual(a.distance_to({x: 33, y: 46}), 0);
+  for (let v of [[32, 46], [33, 45], [33, 47], [34, 46],
+                 {x: 32, y: 46}, {x: 33, y: 45}, {x: 33, y: 47}, {x: 34, y: 46}]) {
+    test.assertEqual(a.distance_to(v), 1);
+  }
+  for (let v of [[32, 45], [32, 47], [34, 45], [34, 47],
+                 {x: 32, y: 45}, {x: 32, y: 47}, {x: 34, y: 45}, {x: 34, y: 47}]) {
+    test.assertEqual(a.distance_to(v), Math.sqrt(2));
+  }
+  for (let v of [[30, 42], [30, 50], [36, 42], [36, 50],
+                 {x: 30, y: 42}, {x: 30, y: 50}, {x: 36, y: 42}, {x: 36, y: 50},
+                 [29, 43], [29, 49], [37, 43], [37, 49],
+                 {x: 29, y: 43}, {x: 29, y: 49}, {x: 37, y: 43}, {x: 37, y: 49}]) {
+    test.assertEqual(a.distance_to(v), 5);
+  }
+  test.assertEqual(a.distance_to(a), 0);
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  test.main();
+});
+</script>
+</body>
+
+</html>
