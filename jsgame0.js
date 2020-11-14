@@ -1146,6 +1146,301 @@ Rect.prototype.toString = function () {
   return `{x: ${ this.x }, y: ${ this.y }, width: ${ this.width }, height: ${ this.height }}`;
 }
 
+class Actor {
+  static ANCHOR_SET = new Set(['topleft', 'midtop', 'topright', 'midleft', 'center', 'midright', 'bottomleft', 'midbottom', 'bottomright']);
+
+  constructor(name) {
+    if (!(name in images)) {
+      throw new Error(`Unknown image "${ name }".`);
+    }
+
+    this.name = name;
+    let image = images[this.name];
+    this._rect = new Rect(0, 0, image.width, image.height);
+    this._anchor = 'center';
+    this._anchor_dx = Math.floor(image.width / 2);
+    this._anchor_dy = Math.floor(image.height / 2);
+    this.angle = 0;
+  }
+
+  get x() {
+    return this._rect.x;
+  }
+  set x(x) {
+    this._rect.x = x;
+  }
+  get y() {
+    return this._rect.y;
+  }
+  set y(y) {
+    this._rect.y = y;
+  }
+  get width() {
+    return this._rect.width;
+  }
+  get height() {
+    return this._rect.height;
+  }
+
+  get anchor() {
+    return this._anchor;
+  }
+  set anchor(anchor) {
+    anchor = anchor.trim().toLowerCase();
+    if (!Actor.ANCHOR_SET.has(anchor)) {
+      return;
+    }
+
+    this._anchor = anchor;
+    if (this._anchor === 'topleft') {
+      this._anchor_dx = 0;
+      this._anchor_dy = 0;
+    }
+    else if (this._anchor === 'midtop') {
+      this._anchor_dx = Math.floor(this.width / 2);
+      this._anchor_dy = 0;
+    }
+    else if (this._anchor === 'topright') {
+      this._anchor_dx = this.width;
+      this._anchor_dy = 0;
+    }
+    else if (this._anchor === 'midleft') {
+      this._anchor_dx = 0;
+      this._anchor_dy = Math.floor(this.height / 2);
+    }
+    else if (this._anchor === 'center') {
+      this._anchor_dx = Math.floor(this.width / 2);
+      this._anchor_dy = Math.floor(this.height / 2);
+    }
+    else if (this._anchor === 'midright') {
+      this._anchor_dx = this.width;
+      this._anchor_dy = Math.floor(this.height / 2);
+    }
+    else if (this._anchor === 'bottomleft') {
+      this._anchor_dx = 0;
+      this._anchor_dy = this.height;
+    }
+    else if (this._anchor === 'midbottom') {
+      this._anchor_dx = Math.floor(this.width / 2);
+      this._anchor_dy = this.height;
+    }
+    else if (this._anchor === 'bottomright') {
+      this._anchor_dx = this.width;
+      this._anchor_dy = this.height;
+    }
+  }
+  get pos() {
+    let tuple = [this.x + this._anchor_dx, this.y + this._anchor_dy];
+    return tuple;
+  }
+  set pos(pos) {
+    let [x=0, y=0] = pos;
+    this.x = x - this._anchor_dx;
+    this.y = y - this._anchor_dy;
+  }
+
+  /*
+   * Attributes delegated to the underlying Rect object.
+   */
+  get top() {
+    return this.y;
+  }
+  set top(top) {
+    this.y = top;
+  }
+  get left() {
+    return this.x;
+  }
+  set left(left) {
+    this.x = left;
+  }
+  get right() {
+    return this.x + this.width;
+  }
+  set right(right) {
+    this.x = right - this.width;
+  }
+  get bottom() {
+    return this.y + this.height;
+  }
+  set bottom(bottom) {
+    this.y = bottom - this.height;
+  }
+  get centerx() {
+    return this.x + Math.floor(this.width / 2);
+  }
+  set centerx(centerx) {
+    this.x = centerx - Math.floor(this.width / 2);
+  }
+  get centery() {
+    return this.y + Math.floor(this.height / 2);
+  }
+  set centery(centery) {
+    this.y = centery - Math.floor(this.height / 2);
+  }
+  get topleft() {
+    let tuple = [this.x, this.y];
+    return tuple;
+  }
+  set topleft(topleft) {
+    let [x=0, y=0] = topleft;
+    this.x = x;
+    this.y = y;
+  }
+  get topright() {
+    let tuple = [this.x + this.width, this.y];
+    return tuple;
+  }
+  set topright(topright) {
+    let [x=0, y=0] = topright;
+    this.x = x - this.width;
+    this.y = y;
+  }
+  get bottomleft() {
+    let tuple = [this.x, this.y + this.height];
+    return tuple;
+  }
+  set bottomleft(bottomleft) {
+    let [x=0, y=0] = bottomleft;
+    this.x = x;
+    this.y = y - this.height;
+  }
+  get bottomright() {
+    let tuple = [this.x + this.width, this.y + this.height];
+    return tuple;
+  }
+  set bottomright(bottomright) {
+    let [x=0, y=0] = bottomright;
+    this.x = x - this.width;
+    this.y = y - this.height;
+  }
+  get midtop() {
+    let tuple = [this.x + Math.floor(this.width / 2), this.y];
+    return tuple;
+  }
+  set midtop(midtop) {
+    let [x=0, y=0] = midtop;
+    this.x = x - Math.floor(this.width / 2);
+    this.y = y;
+  }
+  get midleft() {
+    let tuple = [this.x, this.y + Math.floor(this.height / 2)];
+    return tuple;
+  }
+  set midleft(midleft) {
+    let [x=0, y=0] = midleft;
+    this.x = x;
+    this.y = y - Math.floor(this.height / 2);
+  }
+  get midbottom() {
+    let tuple = [this.x + Math.floor(this.width / 2), this.y + this.height];
+    return tuple;
+  }
+  set midbottom(midbottom) {
+    let [x=0, y=0] = midbottom;
+    this.x = x - Math.floor(this.width / 2);
+    this.y = y - this.height;
+  }
+  get midright() {
+    let tuple = [this.x + this.width, this.y + Math.floor(this.height / 2)];
+    return tuple;
+  }
+  set midright(midright) {
+    let [x=0, y=0] = midright;
+    this.x = x - this.width;
+    this.y = y - Math.floor(this.height / 2);
+  }
+  get center() {
+    let tuple = [this.x + Math.floor(this.width / 2), this.y + Math.floor(this.height / 2)];
+    return tuple;
+  }
+  set center(center) {
+    let [x=0, y=0] = center;
+    this.x = x - Math.floor(this.width / 2);
+    this.y = y - Math.floor(this.height / 2);
+  }
+  get size() {
+    let tuple = [this.width, this.height];
+    return tuple;
+  }
+  contains() {
+    let rect = new Rect(...arguments);
+    return ((this.x <= rect.x) &&
+            (this.y <= rect.y) &&
+            ((this.x + this.width) >= (rect.x + rect.width)) &&
+            ((this.y + this.height) >= (rect.y + rect.height)) &&
+            ((this.x + this.width) > rect.x) &&
+            ((this.y + this.height) > rect.y));
+  }
+  collidepoint() {
+    let x, y;
+    if (arguments.length < 1) {
+      return false;
+    }
+    else if (arguments.length < 2) {
+      if (typeof arguments[0] !== 'object') {
+        return false;
+      }
+      if (Array.isArray(arguments[0])) {
+        [x=0, y=0] = arguments[0];
+      }
+      else {
+        ({x=0, y=0} = arguments[0]);
+      }
+    }
+    else {
+      [x=0, y=0] = arguments;
+    }
+    return ((this.x <= x) &&
+            (x < (this.x + this.width)) &&
+            (this.y <= y) &&
+            (y < (this.y + this.height)));
+  }
+  colliderect() {
+    let rect = new Rect(...arguments);
+    return ((this.x < (rect.x + rect.width)) &&
+            (this.y < (rect.y + rect.height)) &&
+            ((this.x + this.width) > rect.x) &&
+            ((this.y + this.height) > rect.y));
+  }
+
+  draw() {
+    screen.blit(this, [-this._anchor_dx, -this._anchor_dy]);
+  }
+  _vector_to(target) {
+    let [ax=0, ay=0] = this.pos,
+        tuple = [],
+        x, y, dx, dy;
+    if (typeof target !== 'object') {
+      tuple.push(0, 0);
+      return tuple;
+    }
+    else if (target instanceof Actor) {
+      [x=0, y=0] = target.pos;
+    }
+    else if (Array.isArray(target)) {
+      [x=0, y=0] = target;
+    }
+    else {
+      ({x=0, y=0} = target);
+    }
+
+    dx = x - ax;
+    // The y-axis is inverted in graphics (positive goes down)
+    dy = ay - y;
+    tuple.push(Math.sqrt((dx * dx) + (dy * dy)), Math.atan2(dy, dx) * 180 / Math.PI);
+    return tuple;
+  }
+  angle_to(target) {
+    let vector = this._vector_to(target);
+    return vector[1];
+  }
+  distance_to(target) {
+    let vector = this._vector_to(target);
+    return vector[0];
+  }
+}
+
 /*
  * The global screen object representing your game screen.
  *
@@ -1515,15 +1810,37 @@ const screen = (function () {
     },
 
     /*
-     * Draw image to the screen at the given position.
+     * Draw object to the screen at the given position.
      */
-    blit(image, pos) {
+    blit(object, pos) {
       if (context == null) {
         return;
       }
 
-      let [x=0, y=0] = pos;
-      context.drawImage(image, x, y);
+      if (object instanceof Actor) {
+        let image = images[object.name],
+            [x=0, y=0] = pos;
+        context.save();
+        // Move the origin to the anchor so we can rotate
+        context.translate(...object.pos);
+        // Canvas rotates clockwise but Pygame Zero rotates counterclockwise (anticlockwise)
+        context.rotate(-(object.angle % 360) * Math.PI / 180);
+        // Move the origin to the topleft to draw the image
+        context.translate(x, y);
+        context.drawImage(image, 0, 0);
+        context.restore();
+      }
+      else if (typeof object === 'string') {
+        if (!(object in images)) {
+          return;
+        }
+        let image = images[object],
+            [x=0, y=0] = pos;
+        context.save();
+        context.drawImage(image, x, y);
+        context.restore();
+      }
+      // Otherwise, object is not recognized
     },
 
     init(id) {

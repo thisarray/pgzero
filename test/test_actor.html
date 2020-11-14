@@ -350,6 +350,10 @@ function test_collidepoint_arguments() {
 
 function test_angle_to() {
   let a = new Actor('alien');
+
+  test.assertEqual(a.angle_to(42), 0);
+  test.assertEqual(a.angle_to('foobar'), 0);
+
   test.assertEqual(a.angle_to([33, 46]), 0);
   test.assertEqual(a.angle_to([34, 46]), 0);
   test.assertEqual(a.angle_to([34, 45]), 45);
@@ -376,6 +380,10 @@ function test_angle_to() {
 
 function test_distance_to() {
   let a = new Actor('alien');
+
+  test.assertEqual(a.distance_to(42), 0);
+  test.assertEqual(a.distance_to('foobar'), 0);
+
   test.assertEqual(a.distance_to([33, 46]), 0);
   test.assertEqual(a.distance_to({x: 33, y: 46}), 0);
   for (let v of [[32, 46], [33, 45], [33, 47], [34, 46],
