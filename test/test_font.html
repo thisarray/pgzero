@@ -53,18 +53,19 @@ The game screen appears here if your browser supports the Canvas API.
 var WIDTH = 200;
 HEIGHT = 100;
 
-screen.init('#screen');
 const canvas = document.querySelector('#screen');
 
 /*
  * Compare the current canvas to expected via an image/png data URL
  */
-function assertCanvasEqual(expected) {
+function assertCanvasEqual(expected, id) {
   test.assertTrue(expected.startsWith('data:image/png;base64,'));
-//  console.log(canvas.toDataURL());
   test.assertEqual(canvas.width, WIDTH);
   test.assertEqual(canvas.height, HEIGHT);
-  test.assertEqual(canvas.toDataURL(), expected);
+
+  let dataURL = canvas.toDataURL();
+//  console.log(dataURL);
+  test.assertEqual(dataURL, expected);
 }
 
 /*
@@ -80,10 +81,11 @@ function test_wrapped_gradient_text() {
     {bottomleft: [0, 18], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: [0, 0, 255]}]) {
     screen.clear()
     screen.draw.text('gradient\ntext', config);
-    assertCanvasEqual(expected);
+    assertCanvasEqual(expected, 'test_wrapped_gradient_text');
   }
 }
 
+screen.set_mode('#screen');
 test.main();
 </script>
 </body>

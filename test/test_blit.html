@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test screen blit</title>
+  <script src="../jsgame0.js"></script>
+  <script src="../test.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+section.test {
+  border: 1px dotted blue;
+  border-radius: 5px;
+  margin: 1em 0;
+  padding: 1em;
+}
+section.test h2 {
+  margin: 0;
+}
+section.test h3.expected {
+  color: green;
+}
+section.test h3.actual {
+  color: red;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/alien.png" alt="alien">
+</section>
+
+<h1>Test screen blit</h1>
+
+<p>Separate this test because the "alien" image taints the canvas.</p>
+
+<section id="test_blit" class="test">
+<h2>test_blit</h2>
+
+<h3 class="expected">Expected</h3>
+
+<img src="images/expected_alien_blit.png" alt="expected_alien_blit" width="200" height="100">
+
+<h3 class="actual">Actual</h3>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+</section>
+
+<script>
+var WIDTH = 200;
+HEIGHT = 100;
+
+const canvas = document.querySelector('#screen');
+
+/*
+ * Compare the current canvas to expected via an image/png data URL
+ */
+function assertCanvasEqual(expected, id) {
+  test.assertTrue(expected.startsWith('data:image/png;base64,'));
+  test.assertEqual(canvas.width, WIDTH);
+  test.assertEqual(canvas.height, HEIGHT);
+
+  let dataURL = canvas.toDataURL();
+//  console.log(dataURL);
+  test.assertEqual(dataURL, expected);
+}
+
+function test_blit() {
+  screen.clear();
+  screen.blit('alien', [0, 0]);
+  assertCanvasEqual('data:image/png;base64,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',
+                    'test_blit');
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  screen.set_mode('#screen');
+  test.main();
+});
+</script>
+</body>
+
+</html>
