@@ -1474,7 +1474,54 @@ const screen = (function () {
     }
   }
 
-  let context = null,
+  /*
+   * Event Handlers
+   */
+  function keydown(event) {
+    keyboard._press(event);
+    if (typeof window.on_key_down === 'function') {
+      window.on_key_down(keyboard._lookup(event), keyboard.bitmask, event.key)
+    }
+    event.preventDefault();
+  }
+
+  function keyup(event) {
+    if (typeof window.on_key_up === 'function') {
+      window.on_key_up(keyboard._lookup(event), keyboard.bitmask)
+    }
+    keyboard._release(event);
+    event.preventDefault();
+  }
+
+  function mousedown(event) {
+    // Use getBoundingClientRect() to get the distance relative to viewport
+    let box = event.target.getBoundingClientRect(),
+        x = Math.floor(event.clientX - box.left),
+        y = Math.floor(event.clientY - box.top);
+    window.on_mouse_down([x, y], event.buttons);
+  }
+
+  function mouseup(event) {
+    // Use getBoundingClientRect() to get the distance relative to viewport
+    let box = event.target.getBoundingClientRect(),
+        x = Math.floor(event.clientX - box.left),
+        y = Math.floor(event.clientY - box.top);
+    window.on_mouse_up([x, y], event.buttons);
+  }
+
+  function mousemove(event) {
+    // Use getBoundingClientRect() to get the distance relative to viewport
+    let box = event.target.getBoundingClientRect(),
+        x = Math.floor(event.clientX - box.left),
+        y = Math.floor(event.clientY - box.top);
+    window.on_mouse_move([x, y], [event.movementX, event.movementY], event.buttons);
+  }
+
+  /*
+   * Private state variables
+   */
+  let canvas = null,
+      context = null,
       width = 300,
       height = 150,
       running = 0,
@@ -1488,7 +1535,9 @@ const screen = (function () {
       // For the first run of the game loop
       start = timestamp;
     }
-    const elapsed = timestamp - start;
+
+    // JavaScript time is in milliseconds not seconds like Pygame Zero!
+    const elapsed = (timestamp - start) / 1000;
     start = timestamp;
     window.update(elapsed);
     window.draw();
@@ -1843,8 +1892,12 @@ const screen = (function () {
       // Otherwise, object is not recognized
     },
 
-    init(id) {
-      const canvas = document.querySelector(id);
+    set_mode(canvasID, resetID, pauseID) {
+      canvas = document.querySelector(canvasID);
+      if (canvas == null) {
+        // If the element does not exist
+        return;
+      }
       if (!canvas.getContext) {
         // If not the canvas element or Canvas API not supported
         return;
@@ -1860,12 +1913,81 @@ const screen = (function () {
       }
 
       context = canvas.getContext('2d');
-      start = undefined;
 
-      if ((typeof window.update === 'function') &&
-          (typeof window.draw === 'function')) {
-        // Only run the core game loop if draw() and update() are defined
-        running = window.requestAnimationFrame(loop);
+      const reset = document.querySelector(resetID),
+            pause = document.querySelector(pauseID);
+      if (reset != null) {
+        reset.addEventListener('click', (event) => {
+          if (typeof window.reset === 'function') {
+            window.reset();
+          }
+          screen.go();
+        });
+      }
+      if (pause != null) {
+        pause.addEventListener('click', (event) => {
+          if (event.target.innerText == 'Pause') {
+            screen.stop();
+            event.target.innerText = 'Unpause';
+          }
+          else {
+            event.target.innerText = 'Pause';
+            screen.go();
+          }
+        });
+      }
+    },
+
+    go() {
+      if (running !== 0) {
+        // If the core game loop is already running, then do nothing
+        return;
+      }
+
+      // Add event listeners
+      window.addEventListener('keydown', keydown);
+      window.addEventListener('keyup', keyup);
+      if (canvas != null) {
+        if (typeof window.on_mouse_down === 'function') {
+          canvas.addEventListener('mousedown', mousedown);
+        }
+        if (typeof window.on_mouse_up === 'function') {
+          canvas.addEventListener('mouseup', mouseup);
+        }
+        if (typeof window.on_mouse_move === 'function') {
+          canvas.addEventListener('mousemove', mousemove);
+        }
+      }
+
+      if (typeof window.draw === 'function') {
+        if (typeof window.update === 'function') {
+          // Only run the core game loop if draw() and update() are both defined
+          start = undefined;
+          running = window.requestAnimationFrame(loop);
+        }
+        else {
+          // Otherwise, just draw() once because nothing is updated
+          window.draw();
+        }
+      }
+    },
+    stop() {
+      if (running === 0) {
+        // If the core game loop is not running, then do nothing
+        return;
+      }
+
+      // Stop the core game loop
+      window.cancelAnimationFrame(running);
+      running = 0;
+
+      // Remove event listeners
+      window.removeEventListener('keydown', keydown);
+      window.removeEventListener('keyup', keyup);
+      if (canvas != null) {
+        canvas.removeEventListener('mousedown', mousedown);
+        canvas.removeEventListener('mouseup', mouseup);
+        canvas.removeEventListener('mousemove', mousemove);
       }
     }
   }
