@@ -175,7 +175,7 @@ const keyboard = (function () {
    * For example, 1 and !, 2 and @, / and ?.
    */
   const DUAL_SET = new Set();
-  for (const k of Reflect.ownKeys(keys)) {
+  for (const k of Object.getOwnPropertyNames(keys)) {
     let v = keys[k];
     if ((typeof v === 'string') && (v.length === 1)) {
       DUAL_SET.add(v);

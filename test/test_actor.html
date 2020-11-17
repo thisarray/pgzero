@@ -181,7 +181,7 @@ function test_left() {
 
   a.left = new_left;
   test.assertEqual(new_left, a.left);
-  test.assertEqual(new Rect(new_left, 0, a.width, a.height), a);
+  test.assertEqual(new Rect(new_left, 0, a.width, a.height), new Rect(a));
 }
 
 function test_right() {
@@ -201,7 +201,7 @@ function test_top() {
       new_top = 10;
 
   a.top = new_top;
-  test.assertEqual(new Rect(0, new_top, a.width, a.height), a);
+  test.assertEqual(new Rect(0, new_top, a.width, a.height), new Rect(a));
   test.assertEqual(new_top, a.top);
 }
 

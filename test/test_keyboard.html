@@ -22,7 +22,7 @@ body {
 <script>
 window.addEventListener('keydown', (event) => {
   keyboard._press(event);
-  for (const k of Reflect.ownKeys(keys)) {
+  for (const k of Object.getOwnPropertyNames(keys)) {
     let v = keys[k];
     if (keyboard[v]) {
       console.log(`keys.${ k } pressed`);
@@ -30,7 +30,7 @@ window.addEventListener('keydown', (event) => {
   }
 });
 window.addEventListener('keyup', (event) => {
-  for (const k of Reflect.ownKeys(keys)) {
+  for (const k of Object.getOwnPropertyNames(keys)) {
     let v = keys[k];
     if (keyboard[v]) {
       console.log(`keys.${ k } released`);
@@ -63,22 +63,22 @@ function test_mouse() {
 }
 
 function test_keys() {
-  const all_keys = Reflect.ownKeys(keys);
-  for (const k of all_keys) {
+  const allKeys = Object.getOwnPropertyNames(keys);
+  for (const k of allKeys) {
     let v = keys[k];
     test.assertEqual(typeof v, 'string');
     test.assertTrue(v.length > 0);
     test.assertEqual(keyboard._lookup({code: v}), v);
 
     // Test no key is pressed
-    for (const k2 of all_keys) {
+    for (const k2 of allKeys) {
       let v2 = keys[k2];
       test.assertFalse(keyboard[v2]);
     }
 
     // Test no key except the current key is pressed
     keyboard._press({code: v});
-    for (const k2 of all_keys) {
+    for (const k2 of allKeys) {
       let v2 = keys[k2];
       if (v2 === v) {
         test.assertTrue(keyboard[v2]);
@@ -90,7 +90,7 @@ function test_keys() {
     keyboard._release({code: v});
 
     // Test no key is pressed
-    for (const k2 of all_keys) {
+    for (const k2 of allKeys) {
       let v2 = keys[k2];
       test.assertFalse(keyboard[v2]);
     }

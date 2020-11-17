@@ -14,13 +14,17 @@ const test = (function () {
     }
   }
   function assertObjectEqual(first, second) {
-    for (const key of Reflect.ownKeys(first)) {
-      let name = key.toString();
-      if (key in second) {
-        console.assert(first[key] === second[key], `Property ${ name } differ!`);
+    let firstKeys = Object.keys(first),
+        secondKeys = Object.keys(second);
+    if (firstKeys.length !== secondKeys.length) {
+      console.assert(false, `Second object does not have the same number of properties!`);
+    }
+    for (const key of firstKeys) {
+      if (secondKeys.includes(key)) {
+        console.assert(first[key] === second[key], `Property ${ key } differ!`);
       }
       else {
-        console.assert(false, `Second object missing ${ name } property!`);
+        console.assert(false, `Second object missing ${ key } property!`);
       }
     }
   }
@@ -74,11 +78,10 @@ const test = (function () {
     },
     main() {
       // Run all global test functions
-      for (const key of Reflect.ownKeys(window)) {
-        let name = key.toString();
+      for (const name of Object.getOwnPropertyNames(window)) {
         if (name.startsWith('test_')) {
           console.group(name);
-          window[key]();
+          window[name]();
           console.groupEnd();
         }
       }
