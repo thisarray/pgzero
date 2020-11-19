@@ -707,7 +707,7 @@ class Rect {
       // If there are not enough arguments
       throw new Error('Not enough arguments.');
     }
-    else if (arguments.length < 2) {
+    if (arguments.length < 2) {
       if (typeof arguments[0] !== 'object') {
         throw new Error('Not enough arguments.');
       }
@@ -1054,7 +1054,7 @@ class Rect {
     if (arguments.length < 1) {
       return false;
     }
-    else if (arguments.length < 2) {
+    if (arguments.length < 2) {
       if (typeof arguments[0] !== 'object') {
         return false;
       }
@@ -1146,6 +1146,12 @@ Rect.prototype.toString = function () {
   return `{x: ${ this.x }, y: ${ this.y }, width: ${ this.width }, height: ${ this.height }}`;
 }
 
+/*
+ * The Actor class differs from that in Pygame Zero because x and y are not aliases for pos.
+ * x and y always refer to the topleft corner of the Actor.
+ * This makes them less confusing and the Rect methods easier to implement.
+ * If you want to change the location of the anchor, then use pos.
+ */
 class Actor {
   static ANCHOR_SET = new Set(['topleft', 'midtop', 'topright', 'midleft', 'center', 'midright', 'bottomleft', 'midbottom', 'bottomright']);
 
@@ -1377,7 +1383,7 @@ class Actor {
     if (arguments.length < 1) {
       return false;
     }
-    else if (arguments.length < 2) {
+    if (arguments.length < 2) {
       if (typeof arguments[0] !== 'object') {
         return false;
       }
@@ -1442,14 +1448,215 @@ class Actor {
 }
 
 /*
+ * Class to handle the animation.
+ *
+ * It cannot be named "Animation" because the Web Animation API already uses that name.
+ * So we use a more appropriate and exact name.
+ *
+ * In traditional animation, an inbetweener is the assistant responsible for drawing the images between the keyframes.
+ * Shortening "inbetween" is where we got the term "tween".
+ */
+class Inbetweener {
+  /*
+   * Tween functions
+   */
+  static linear(n) {
+    return n;
+  }
+
+  static accelerate(n) {
+    return (n * n);
+  }
+
+  static decelerate(n) {
+    return (-1.0 * n * (n - 2.0));
+  }
+
+  static accel_decel(n) {
+    let p = n * 2;
+    if (p < 1) {
+      return (0.5 * p * p);
+    }
+    p -= 1.0;
+    return (-0.5 * ((p * (p - 2.0)) - 1.0));
+  }
+
+  static in_elastic(n) {
+    let p = 0.3,
+        s = p / 4.0;
+    if (n == 1) {
+      return 1.0;
+    }
+    n -= 1;
+    return -(Math.pow(2, 10 * n) * Math.sin((n - s) * 2 * Math.PI / p));
+  }
+
+  static out_elastic(n) {
+    let p = 0.3,
+        s = p / 4.0;
+    if (n == 1) {
+      return 1.0;
+    }
+    return ((Math.pow(2, -10 * n) * Math.sin((n - s) * 2 * Math.PI / p)) + 1.0);
+  }
+
+  static in_out_elastic(n) {
+    let p = 0.3 * 1.5,
+        s = p / 4.0,
+        q = n * 2;
+    if (q == 2) {
+      return 1.0;
+    }
+    if (q < 1) {
+      q -= 1;
+      return (-0.5 * Math.pow(2, 10 * q) * Math.sin((q - s) * 2 * Math.PI / p));
+    }
+    q -= 1;
+    return ((0.5 * Math.pow(2, -10 * q) * Math.sin((q - s) * 2 * Math.PI / p)) + 1.0);
+  }
+
+  static _out_bounce_internal(t, d) {
+    let p = t / d;
+    if (p < (1.0 / 2.75)) {
+      return (7.5625 * p * p);
+    }
+    if (p < (2.0 / 2.75)) {
+      p -= 1.5 / 2.75;
+      return ((7.5625 * p * p) + 0.75);
+    }
+    if (p < (2.5 / 2.75)) {
+      p -= 2.25 / 2.75;
+      return ((7.5625 * p * p) + 0.9375);
+    }
+    p -= 2.625 / 2.75;
+    return ((7.5625 * p * p) + 0.984375);
+  }
+
+  static _in_bounce_internal(t, d) {
+    return (1.0 - Inbetweener._out_bounce_internal(d - t, d));
+  }
+
+  static bounce_end(n) {
+    return Inbetweener._out_bounce_internal(n, 1);
+  }
+
+  static bounce_start(n) {
+    return Inbetweener._in_bounce_internal(n, 1);
+  }
+
+  static bounce_start_end(n) {
+    let p = n * 2;
+    if (p < 1) {
+      return (Inbetweener._in_bounce_internal(p, 1) * 0.5);
+    }
+    return ((Inbetweener._out_bounce_internal(p - 1, 1) * 0.5) + 0.5);
+  }
+
+  constructor(puppet, tween, duration, attributes, callback) {
+    if (typeof puppet !== 'object') {
+      throw new TypeError('puppet must be an object.');
+    }
+    if ((typeof tween !== 'string') || tween.startsWith('_')) {
+      throw new TypeError('tween must be a string.');
+    }
+    this.tween = tween.trim().toLowerCase();
+    if (!(this.tween in Inbetweener)) {
+      throw new Error(`Unrecognized tween function "${ tween }".`);
+    }
+    if (duration <= 0) {
+      throw new Error('duration must be positive.');
+    }
+    if (typeof attributes !== 'object') {
+      throw new TypeError('attributes must be an object.');
+    }
+
+    this.puppet = puppet;
+    this.elapsed = 0;
+    this.duration = duration;
+    this.callback = callback;
+
+    // Populate this.attributes with the start and the end values of the properties to tween
+    // They must either both be Numbers or Arrays of Numbers the same length
+    this.attributes = new Map();
+    for (let a of Object.getOwnPropertyNames(attributes)) {
+      if (!(a in this.puppet)) {
+        continue;
+      }
+      let start = this.puppet[a],
+          end = attributes[a];
+      if ((typeof start === 'number') && (typeof end === 'number')) {
+        this.attributes.set(a, {start: start, end: end});
+      }
+      else if (Array.isArray(start) && Array.isArray(end)) {
+        if (start.length != end.length) {
+          continue;
+        }
+        if (start.filter(e => (typeof e !== 'number')).length > 0) {
+          continue;
+        }
+        if (end.filter(e => (typeof e !== 'number')).length > 0) {
+          continue;
+        }
+        this.attributes.set(a, {start: start, end: end});
+      }
+    }
+  }
+
+  /*
+   * Update the animation after dt seconds have passed.
+   */
+  update(dt) {
+    this.elapsed += dt;
+    if (this.elapsed > this.duration) {
+      // If the animation has reached its end
+      for (let [k, v] of this.attributes) {
+        this.puppet[k] = v.end;
+      }
+      if (typeof this.callback === 'function') {
+        this.callback();
+      }
+    }
+    else {
+      // Interpolate between start and end based on the tween function
+      let n = Inbetweener[this.tween](this.elapsed / this.duration);
+      for (let [k, v] of this.attributes) {
+        if (typeof v.start === 'number') {
+          this.puppet[k] = v.start + ((v.end - v.start) * n);
+        }
+        else if (Array.isArray(v.start)) {
+          let result = [];
+          for (let i = 0; i < v.start.length; i++) {
+            result.push(v.start[i] + ((v.end[i] - v.start[i]) * n));
+          }
+          this.puppet[k] = result;
+        }
+      }
+    }
+  }
+
+  /*
+   * Boolean flag that is true if the animation is complete.
+   */
+  get done() {
+    if (this.attributes.size <= 0) {
+      // If there is no property to update
+      return true;
+    }
+    return (this.elapsed > this.duration);
+  }
+}
+
+/*
  * The global screen object representing your game screen.
  *
  * It mimicks the Python object using Immediately Invoked Function Expression/Self-Executing Anonymous Function.
  */
 const screen = (function () {
+  const DEFAULT_COLOR = 'white';
   const DEFAULT_FONT = 'sans-serif';
   const DEFAULT_FONT_SIZE = 24;
-  const DEFAULT_COLOR = 'white';
+  const DEFAULT_WIDTH = 800;
+  const DEFAULT_HEIGHT = 600;
   const MAX_COLOR = 255;
   const TWO_PI = Math.PI * 2;
 
@@ -1475,18 +1682,33 @@ const screen = (function () {
   }
 
   /*
+   * Private state variables
+   */
+  let canvas = null,
+      width = DEFAULT_WIDTH,
+      height = DEFAULT_HEIGHT,
+      context = null,
+      hasKeyDown = false,
+      hasKeyUp = false,
+      hasDraw = false,
+      hasUpdate = false,
+      running = 0,
+      animationQueue = [],
+      start;
+
+  /*
    * Event Handlers
    */
   function keydown(event) {
     keyboard._press(event);
-    if (typeof window.on_key_down === 'function') {
+    if (hasKeyDown) {
       window.on_key_down(keyboard._lookup(event), keyboard.bitmask, event.key)
     }
     event.preventDefault();
   }
 
   function keyup(event) {
-    if (typeof window.on_key_up === 'function') {
+    if (hasKeyUp) {
       window.on_key_up(keyboard._lookup(event), keyboard.bitmask)
     }
     keyboard._release(event);
@@ -1518,16 +1740,6 @@ const screen = (function () {
   }
 
   /*
-   * Private state variables
-   */
-  let canvas = null,
-      context = null,
-      width = 300,
-      height = 150,
-      running = 0,
-      start;
-
-  /*
    * The core game loop
    */
   function loop(timestamp) {
@@ -1539,8 +1751,20 @@ const screen = (function () {
     // JavaScript time is in milliseconds not seconds like Pygame Zero!
     const elapsed = (timestamp - start) / 1000;
     start = timestamp;
-    window.update(elapsed);
-    window.draw();
+
+    // Animate any Inbetweener objects in the queue
+    for (let a of animationQueue) {
+      a.update(elapsed);
+    }
+    animationQueue = animationQueue.filter(a => (!a.done));
+
+    if (hasUpdate) {
+      window.update(elapsed);
+    }
+    if (hasDraw) {
+      window.draw();
+    }
+
     running = window.requestAnimationFrame(loop);
   }
 
@@ -1892,6 +2116,29 @@ const screen = (function () {
       // Otherwise, object is not recognized
     },
 
+    animate() {
+      if (arguments.length < 1) {
+        return;
+      }
+      let animation;
+      if (arguments.length < 4) {
+        animation = arguments[0];
+      }
+      else {
+        animation = new Inbetweener(...arguments);
+      }
+      if (animation instanceof Inbetweener) {
+        if (!animation.done) {
+          animationQueue.push(animation);
+        }
+      }
+    },
+
+    /*
+     * Setup the screen object to draw to the canvas element with ID canvasID.
+     *
+     * Also look around to see what is available.
+     */
     set_mode(canvasID, resetID, pauseID) {
       canvas = document.querySelector(canvasID);
       if (canvas == null) {
@@ -1903,16 +2150,26 @@ const screen = (function () {
         return;
       }
       if (window.TITLE) {
-        document.querySelector('title').innerText = window.TITLE;
+        document.querySelector('title').textContent = window.TITLE;
       }
       if (window.WIDTH) {
         width = canvas.width = window.WIDTH;
       }
+      else {
+        width = canvas.width = DEFAULT_WIDTH;
+      }
       if (window.HEIGHT) {
         height = canvas.height = window.HEIGHT;
       }
+      else {
+        height = canvas.height = DEFAULT_HEIGHT;
+      }
 
       context = canvas.getContext('2d');
+      hasKeyDown = (typeof window.on_key_down === 'function');
+      hasKeyUp = (typeof window.on_key_up === 'function');
+      hasDraw = (typeof window.draw === 'function');
+      hasUpdate = (typeof window.update === 'function');
 
       const reset = document.querySelector(resetID),
             pause = document.querySelector(pauseID);
@@ -1921,17 +2178,20 @@ const screen = (function () {
           if (typeof window.reset === 'function') {
             window.reset();
           }
+          if (pause != null) {
+            pause.textContent = 'Pause';
+          }
           screen.go();
         });
       }
       if (pause != null) {
         pause.addEventListener('click', (event) => {
-          if (event.target.innerText == 'Pause') {
+          if (event.target.textContent == 'Pause') {
             screen.stop();
-            event.target.innerText = 'Unpause';
+            event.target.textContent = 'Unpause';
           }
           else {
-            event.target.innerText = 'Pause';
+            event.target.textContent = 'Pause';
             screen.go();
           }
         });
@@ -1945,8 +2205,8 @@ const screen = (function () {
       }
 
       // Add event listeners
-      window.addEventListener('keydown', keydown);
-      window.addEventListener('keyup', keyup);
+      window.addEventListener('keydown', keydown, true);
+      window.addEventListener('keyup', keyup, true);
       if (canvas != null) {
         if (typeof window.on_mouse_down === 'function') {
           canvas.addEventListener('mousedown', mousedown);
@@ -1959,17 +2219,8 @@ const screen = (function () {
         }
       }
 
-      if (typeof window.draw === 'function') {
-        if (typeof window.update === 'function') {
-          // Only run the core game loop if draw() and update() are both defined
-          start = undefined;
-          running = window.requestAnimationFrame(loop);
-        }
-        else {
-          // Otherwise, just draw() once because nothing is updated
-          window.draw();
-        }
-      }
+      start = undefined;
+      running = window.requestAnimationFrame(loop);
     },
     stop() {
       if (running === 0) {
@@ -1982,8 +2233,8 @@ const screen = (function () {
       running = 0;
 
       // Remove event listeners
-      window.removeEventListener('keydown', keydown);
-      window.removeEventListener('keyup', keyup);
+      window.removeEventListener('keydown', keydown, true);
+      window.removeEventListener('keyup', keyup, true);
       if (canvas != null) {
         canvas.removeEventListener('mousedown', mousedown);
         canvas.removeEventListener('mouseup', mouseup);
