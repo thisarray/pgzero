@@ -673,6 +673,70 @@ const keyboard = (function () {
   }
 })();
 
+const clock = (function () {
+  // Map each callback function to its Set of timeout IDs
+  const TIMEOUT_MAP = new Map();
+
+  // Map each callback function to its Set of interval IDs
+  const INTERVAL_MAP = new Map();
+
+  return {
+    /*
+     * Schedule callback to be called, at delay seconds from now.
+     */
+    schedule(callback, delay) {
+      // JavaScript time is in milliseconds not seconds like Pygame Zero!
+      let timeoutID = setTimeout(callback, delay * 1000);
+      if (TIMEOUT_MAP.has(callback)) {
+        TIMEOUT_MAP.get(callback).add(timeoutID);
+      }
+      else {
+        TIMEOUT_MAP.set(callback, new Set([timeoutID]));
+      }
+    },
+
+    /*
+     * Schedule callback to be called once, at delay seconds from now.
+     */
+    schedule_unique(callback, delay) {
+      this.unschedule(callback);
+      this.schedule(callback, delay);
+    },
+
+    /*
+     * Schedule callback to be called repeatedly with interval seconds between calls.
+     */
+    schedule_interval(callback, interval) {
+      // JavaScript time is in milliseconds not seconds like Pygame Zero!
+      let intervalID = setInterval(callback, interval * 1000);
+      if (INTERVAL_MAP.has(callback)) {
+        INTERVAL_MAP.get(callback).add(intervalID);
+      }
+      else {
+        INTERVAL_MAP.set(callback, new Set([intervalID]));
+      }
+    },
+
+    /*
+     * Unschedule the given callback.
+     */
+    unschedule(callback) {
+      if (TIMEOUT_MAP.has(callback)) {
+        for (const id of TIMEOUT_MAP.get(callback)) {
+          clearTimeout(id);
+        }
+        TIMEOUT_MAP.get(callback).clear();
+      }
+      if (INTERVAL_MAP.has(callback)) {
+        for (const id of INTERVAL_MAP.get(callback)) {
+          clearInterval(id);
+        }
+        INTERVAL_MAP.get(callback).clear();
+      }
+    }
+  }
+})();
+
 const images = (function () {
   return {
     // Uppercase method names to avoid clashing with lowercase names of resources
@@ -1743,6 +1807,15 @@ const screen = (function () {
    * The core game loop
    */
   function loop(timestamp) {
+    /*
+     * Best practice
+     * ---
+     * Calling the next requestAnimationFrame early ensures the browser
+     * receives it on time to plan accordingly even if your current frame
+     * misses its VSync window.
+     */
+    running = window.requestAnimationFrame(loop);
+
     if (start == null) {
       // For the first run of the game loop
       start = timestamp;
@@ -1764,8 +1837,6 @@ const screen = (function () {
     if (hasDraw) {
       window.draw();
     }
-
-    running = window.requestAnimationFrame(loop);
   }
 
   return {
@@ -2151,6 +2222,7 @@ const screen = (function () {
       }
       if (window.TITLE) {
         document.querySelector('title').textContent = window.TITLE;
+        document.querySelector('h1').textContent = window.TITLE;
       }
       if (window.WIDTH) {
         width = canvas.width = window.WIDTH;
