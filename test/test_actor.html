@@ -73,6 +73,38 @@ function assertCanvasEqual(expected, id) {
   test.assertEqual(dataURL, expected);
 }
 
+function test_anchor() {
+  let a = new Actor('alien');
+  test.assertEqual(Actor.ANCHOR_SET.size, 9);
+  for (let value of Actor.ANCHOR_SET) {
+    test.assertEqual(value, value.trim().toLowerCase());
+    test.assertTrue(Actor.ANCHOR_SET.has(value));
+    test.assertFalse(Actor.ANCHOR_SET.has(value.toUpperCase()));
+    a.anchor = value;
+  }
+  for (let value of ['', 'foobar']) {
+    test.assertFalse(Actor.ANCHOR_SET.has(value));
+    try {
+      a.anchor = value;
+      console.assert(false, 'RangeError not raised.');
+    }
+    catch (error) {
+      test.assertTrue(error instanceof RangeError);
+    }
+  }
+}
+
+function test_actor() {
+  let a;
+  try {
+    a = new Actor('foobar');
+    console.assert(false, 'RangeError not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof RangeError);
+  }
+}
+
 function test_sensible_init_defaults() {
   let a = new Actor('alien');
   test.assertEqual(a.name, 'alien');

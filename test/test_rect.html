@@ -66,6 +66,31 @@ function test_construction_rect() {
   test.assertEqual(4, r2.height);
 }
 
+function test_rect() {
+  let r;
+  try {
+    r = new Rect();
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof Error);
+  }
+  try {
+    r = new Rect(42);
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof Error);
+  }
+  try {
+    r = new Rect(4, 2);
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof Error);
+  }
+}
+
 function test_toString() {
   let r = new Rect(1, 2, 3, 4);
   test.assertEqual(r.toString(), '{x: 1, y: 2, width: 3, height: 4}');

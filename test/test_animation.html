@@ -299,13 +299,22 @@ function test_constructor_errors() {
   catch (error) {
     test.assertTrue(error instanceof TypeError);
   }
+  for (let value of ['', 'foobar']) {
+    try {
+      a = new Inbetweener(p, value, 2, {attribute: 2});
+      console.assert(false, 'RangeError not raised.');
+    }
+    catch (error) {
+      test.assertTrue(error instanceof RangeError);
+    }
+  }
 
   try {
     a = new Inbetweener(p, 'linear', -1, {attribute: 2});
-    console.assert(false, 'Error not raised.');
+    console.assert(false, 'RangeError not raised.');
   }
   catch (error) {
-    test.assertTrue(error instanceof Error);
+    test.assertTrue(error instanceof RangeError);
   }
 
   try {
