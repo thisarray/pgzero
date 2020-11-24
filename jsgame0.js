@@ -1221,7 +1221,7 @@ class Actor {
 
   constructor(name) {
     if (!(name in images)) {
-      throw new Error(`Unknown image "${ name }".`);
+      throw new RangeError(`Unknown image "${ name }".`);
     }
 
     this.name = name;
@@ -1256,12 +1256,12 @@ class Actor {
     return this._anchor;
   }
   set anchor(anchor) {
-    anchor = anchor.trim().toLowerCase();
-    if (!Actor.ANCHOR_SET.has(anchor)) {
-      return;
+    let cleanAnchor = anchor.trim().toLowerCase();
+    if (!Actor.ANCHOR_SET.has(cleanAnchor)) {
+      throw new RangeError(`Unknown anchor "${ anchor }".`);
     }
 
-    this._anchor = anchor;
+    this._anchor = cleanAnchor;
     if (this._anchor === 'topleft') {
       this._anchor_dx = 0;
       this._anchor_dy = 0;
@@ -1625,10 +1625,10 @@ class Inbetweener {
     }
     this.tween = tween.trim().toLowerCase();
     if (!(this.tween in Inbetweener)) {
-      throw new Error(`Unrecognized tween function "${ tween }".`);
+      throw new RangeError(`Unrecognized tween function "${ tween }".`);
     }
     if (duration <= 0) {
-      throw new Error('duration must be positive.');
+      throw new RangeError('duration must be positive.');
     }
     if (typeof attributes !== 'object') {
       throw new TypeError('attributes must be an object.');
@@ -1763,6 +1763,11 @@ const screen = (function () {
   /*
    * Event Handlers
    */
+  function clickStart(event) {
+    screen.go();
+    event.target.removeEventListener('click', clickStart);
+  }
+
   function keydown(event) {
     keyboard._press(event);
     if (hasKeyDown) {
@@ -2242,6 +2247,13 @@ const screen = (function () {
       hasKeyUp = (typeof window.on_key_up === 'function');
       hasDraw = (typeof window.draw === 'function');
       hasUpdate = (typeof window.update === 'function');
+
+      let x = Math.floor(width / 2),
+          y = Math.floor(height / 2);
+      screen.clear();
+      screen.draw.filled_circle([x, y], 25, 'white');
+      screen.draw.filled_polygon([[x + 11, y], [x - 6, y - 10], [x - 6, y + 10]], 'black');
+      canvas.addEventListener('click', clickStart);
 
       const reset = document.querySelector(resetID),
             pause = document.querySelector(pauseID);

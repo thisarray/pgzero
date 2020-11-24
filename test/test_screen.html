@@ -532,6 +532,14 @@ function test_wrapped_gradient_text() {
   }
 }
 
+function test_start() {
+  let x = Math.floor(WIDTH / 2),
+      y = Math.floor(HEIGHT / 2);
+  screen.clear();
+  screen.draw.filled_circle([x, y], 25, 'white');
+  screen.draw.filled_polygon([[x + 11, y], [x - 6, y - 10], [x - 6, y + 10]], 'black');
+}
+
 screen.set_mode('#screen');
 test.main();
 </script>
