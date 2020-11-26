@@ -1212,13 +1212,11 @@ Rect.prototype.toString = function () {
 
 /*
  * The Actor class differs from that in Pygame Zero because x and y are not aliases for pos.
- * x and y always refer to the topleft corner of the Actor.
- * This makes them less confusing and the Rect methods easier to implement.
+ * I found the Pygame Zero implementation confusing and complicating everything.
+ * Here x and y always refer to the topleft corner of the Actor.
  * If you want to change the location of the anchor, then use pos.
  */
 class Actor {
-  static ANCHOR_SET = new Set(['topleft', 'midtop', 'topright', 'midleft', 'center', 'midright', 'bottomleft', 'midbottom', 'bottomright']);
-
   constructor(name) {
     if (!(name in images)) {
       throw new RangeError(`Unknown image "${ name }".`);
@@ -1227,9 +1225,14 @@ class Actor {
     this.name = name;
     let image = images[this.name];
     this._rect = new Rect(0, 0, image.width, image.height);
-    this._anchor = 'center';
-    this._anchor_dx = Math.floor(image.width / 2);
-    this._anchor_dy = Math.floor(image.height / 2);
+
+    // Initialize the anchor at center
+    // x offset in pixels from the topleft corner to the anchor
+    this.anchor_dx = Math.floor(image.width / 2);
+
+    // y offset in pixels from the topleft corner to the anchor
+    this.anchor_dy = Math.floor(image.height / 2);
+
     this.angle = 0;
   }
 
@@ -1253,60 +1256,129 @@ class Actor {
   }
 
   get anchor() {
-    return this._anchor;
+    let tuple = [this.anchor_dx, this.anchor_dy];
+    return tuple;
   }
+
+  /*
+   * anchor is overloaded to accept String or Number in Array or not.
+   *
+   * I personally think it is not Pythonic and violates
+   * "There should be one-- and preferably only one --obvious way to do it."
+   * but I did not write the Pygame Zero spec.
+   */
   set anchor(anchor) {
-    let cleanAnchor = anchor.trim().toLowerCase();
-    if (!Actor.ANCHOR_SET.has(cleanAnchor)) {
-      throw new RangeError(`Unknown anchor "${ anchor }".`);
+    if (typeof anchor === 'string') {
+      let cleaned = anchor.trim().toLowerCase();
+      if (cleaned === 'topleft') {
+        this.anchor_dx = 0;
+        this.anchor_dy = 0;
+      }
+      else if (cleaned === 'midtop') {
+        this.anchor_dx = Math.floor(this.width / 2);
+        this.anchor_dy = 0;
+      }
+      else if (cleaned === 'topright') {
+        this.anchor_dx = this.width;
+        this.anchor_dy = 0;
+      }
+      else if (cleaned === 'midleft') {
+        this.anchor_dx = 0;
+        this.anchor_dy = Math.floor(this.height / 2);
+      }
+      else if (cleaned === 'center') {
+        this.anchor_dx = Math.floor(this.width / 2);
+        this.anchor_dy = Math.floor(this.height / 2);
+      }
+      else if (cleaned === 'midright') {
+        this.anchor_dx = this.width;
+        this.anchor_dy = Math.floor(this.height / 2);
+      }
+      else if (cleaned === 'bottomleft') {
+        this.anchor_dx = 0;
+        this.anchor_dy = this.height;
+      }
+      else if (cleaned === 'midbottom') {
+        this.anchor_dx = Math.floor(this.width / 2);
+        this.anchor_dy = this.height;
+      }
+      else if (cleaned === 'bottomright') {
+        this.anchor_dx = this.width;
+        this.anchor_dy = this.height;
+      }
+      else {
+        throw new RangeError(`Unknown anchor "${ anchor }". Must be "topleft", "midtop", "topright", "midleft", "center", "midright", "bottomleft", "midbottom", or "bottomright".`);
+      }
+
+      return;
     }
 
-    this._anchor = cleanAnchor;
-    if (this._anchor === 'topleft') {
-      this._anchor_dx = 0;
-      this._anchor_dy = 0;
+    if (typeof anchor === 'object') {
+      let x, y, cleaned;
+      if (Array.isArray(anchor)) {
+        [x=0, y=0] = anchor;
+      }
+      else {
+        ({x=0, y=0} = anchor);
+      }
+
+      if (typeof x === 'number') {
+        this.anchor_dx = x;
+      }
+      else if (typeof x === 'string') {
+        cleaned = x.trim().toLowerCase();
+        if (cleaned === 'left') {
+          this.anchor_dx = 0;
+        }
+        else if ((cleaned === 'center') || (cleaned === 'middle')) {
+          this.anchor_dx = Math.floor(this.width / 2);
+        }
+        else if (cleaned === 'right') {
+          this.anchor_dx = this.width;
+        }
+        else {
+          throw new RangeError(`Unknown anchor "${ x }". Must be "left", "center", "middle", or "right".`);
+        }
+      }
+      else {
+        throw new TypeError('Unrecognized anchor type. Must be a Number or a String.');
+      }
+
+      if (typeof y === 'number') {
+        this.anchor_dy = y;
+      }
+      else if (typeof y === 'string') {
+        cleaned = y.trim().toLowerCase();
+        if (cleaned === 'top') {
+          this.anchor_dy = 0;
+        }
+        else if ((cleaned === 'center') || (cleaned === 'middle')) {
+          this.anchor_dy = Math.floor(this.height / 2);
+        }
+        else if (cleaned === 'bottom') {
+          this.anchor_dy = this.height;
+        }
+        else {
+          throw new RangeError(`Unknown anchor "${ y }". Must be "top", "center", "middle", or "bottom".`);
+        }
+      }
+      else {
+        throw new TypeError('Unrecognized anchor type. Must be a Number or a String.');
+      }
+
+      return;
     }
-    else if (this._anchor === 'midtop') {
-      this._anchor_dx = Math.floor(this.width / 2);
-      this._anchor_dy = 0;
-    }
-    else if (this._anchor === 'topright') {
-      this._anchor_dx = this.width;
-      this._anchor_dy = 0;
-    }
-    else if (this._anchor === 'midleft') {
-      this._anchor_dx = 0;
-      this._anchor_dy = Math.floor(this.height / 2);
-    }
-    else if (this._anchor === 'center') {
-      this._anchor_dx = Math.floor(this.width / 2);
-      this._anchor_dy = Math.floor(this.height / 2);
-    }
-    else if (this._anchor === 'midright') {
-      this._anchor_dx = this.width;
-      this._anchor_dy = Math.floor(this.height / 2);
-    }
-    else if (this._anchor === 'bottomleft') {
-      this._anchor_dx = 0;
-      this._anchor_dy = this.height;
-    }
-    else if (this._anchor === 'midbottom') {
-      this._anchor_dx = Math.floor(this.width / 2);
-      this._anchor_dy = this.height;
-    }
-    else if (this._anchor === 'bottomright') {
-      this._anchor_dx = this.width;
-      this._anchor_dy = this.height;
-    }
+
+    throw new TypeError('Unrecognized anchor type.');
   }
   get pos() {
-    let tuple = [this.x + this._anchor_dx, this.y + this._anchor_dy];
+    let tuple = [this.x + this.anchor_dx, this.y + this.anchor_dy];
     return tuple;
   }
   set pos(pos) {
     let [x=0, y=0] = pos;
-    this.x = x - this._anchor_dx;
-    this.y = y - this._anchor_dy;
+    this.x = x - this.anchor_dx;
+    this.y = y - this.anchor_dy;
   }
 
   /*
@@ -1475,7 +1547,7 @@ class Actor {
   }
 
   draw() {
-    screen.blit(this, [-this._anchor_dx, -this._anchor_dy]);
+    screen.blit(this, this.topleft);
   }
   _vector_to(target) {
     let [ax=0, ay=0] = this.pos,
@@ -2168,14 +2240,14 @@ const screen = (function () {
 
       if (object instanceof Actor) {
         let image = images[object.name],
-            [x=0, y=0] = pos;
+            [x=0, y=0] = object.anchor;
         context.save();
         // Move the origin to the anchor so we can rotate
         context.translate(...object.pos);
         // Canvas rotates clockwise but Pygame Zero rotates counterclockwise (anticlockwise)
         context.rotate(-(object.angle % 360) * Math.PI / 180);
         // Move the origin to the topleft to draw the image
-        context.translate(x, y);
+        context.translate(-x, -y);
         context.drawImage(image, 0, 0);
         context.restore();
       }
@@ -2189,7 +2261,10 @@ const screen = (function () {
         context.drawImage(image, x, y);
         context.restore();
       }
-      // Otherwise, object is not recognized
+      else {
+        // Otherwise, object is not recognized
+        throw new TypeError('Unrecognized object to blit.');
+      }
     },
 
     animate() {

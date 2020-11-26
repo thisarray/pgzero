@@ -74,16 +74,64 @@ function assertCanvasEqual(expected, id) {
 }
 
 function test_anchor() {
-  let a = new Actor('alien');
-  test.assertEqual(Actor.ANCHOR_SET.size, 9);
-  for (let value of Actor.ANCHOR_SET) {
-    test.assertEqual(value, value.trim().toLowerCase());
-    test.assertTrue(Actor.ANCHOR_SET.has(value));
-    test.assertFalse(Actor.ANCHOR_SET.has(value.toUpperCase()));
-    a.anchor = value;
+  let anchors = ['topleft', 'midtop', 'topright', 'midleft', 'center', 'midright', 'bottomleft', 'midbottom', 'bottomright'],
+      a = new Actor('alien'),
+      halfWidth = Math.floor(a.width / 2),
+      halfHeight = Math.floor(a.height / 2);
+  for (let anchor of anchors) {
+    for (let variant of [anchor, anchor.toUpperCase(), anchor.substring(0, 1).toUpperCase() + anchor.substring(1)]) {
+      for (let value of [variant, '  ' + variant, variant + '  ', '  ' + variant + '  ']) {
+        a.anchor = value;
+        if (anchor.includes('left')) {
+          test.assertEqual(a.anchor_dx, 0);
+        }
+        else if (anchor.includes('right')) {
+          test.assertEqual(a.anchor_dx, a.width);
+        }
+        else {
+          test.assertEqual(a.anchor_dx, halfWidth);
+        }
+
+        if (anchor.includes('top')) {
+          test.assertEqual(a.anchor_dy, 0);
+        }
+        else if (anchor.includes('bottom')) {
+          test.assertEqual(a.anchor_dy, a.height);
+        }
+        else {
+          test.assertEqual(a.anchor_dy, halfHeight);
+        }
+
+        if (anchor !== 'center') {
+          try {
+            a.anchor = [value, value];
+            console.assert(false, 'RangeError not raised.');
+          }
+          catch (error) {
+            test.assertTrue(error instanceof RangeError);
+          }
+          try {
+            a.anchor = [value, 'center'];
+            console.assert(false, 'RangeError not raised.');
+          }
+          catch (error) {
+            test.assertTrue(error instanceof RangeError);
+          }
+          try {
+            a.anchor = ['center', value];
+            console.assert(false, 'RangeError not raised.');
+          }
+          catch (error) {
+            test.assertTrue(error instanceof RangeError);
+          }
+        }
+      }
+    }
   }
-  for (let value of ['', 'foobar']) {
-    test.assertFalse(Actor.ANCHOR_SET.has(value));
+  for (let value of [
+    '', 'foobar', ['top', 'left'], ['left', 'left'],
+    ['bottom', 'right'], ['right', 'right'],
+    ['', 'center'], ['center', ''], ['foobar', 'top'], ['left', 'foobar']]) {
     try {
       a.anchor = value;
       console.assert(false, 'RangeError not raised.');
@@ -91,6 +139,32 @@ function test_anchor() {
     catch (error) {
       test.assertTrue(error instanceof RangeError);
     }
+  }
+
+  for (let value of [
+    'topleft', ['left', 'top'], [0, 'top'], ['left', 0], [0, 0],
+    {x: 'left', y: 'top'}, {x: 0, y: 'top'}, {x: 'left', y: 0}, {x: 0, y: 0}]) {
+    a.anchor = value;
+    test.assertEqual(a.anchor_dx, 0);
+    test.assertEqual(a.anchor_dy, 0);
+  }
+
+  for (let value of [
+    'center', ['center', 'center'], ['center', 'middle'], ['middle', 'center'], ['middle', 'middle'],
+    [halfWidth, 'center'], [halfWidth, 'middle'], ['center', halfHeight], ['middle', halfHeight], [halfWidth, halfHeight],
+    {x: 'center', y: 'center'}, {x: 'center', y: 'middle'}, {x: 'middle', y: 'center'}, {x: 'middle', y: 'middle'},
+    {x: halfWidth, y: 'center'}, {x: halfWidth, y: 'middle'}, {x: 'center', y: halfHeight}, {x: 'middle', y: halfHeight}, {x: halfWidth, y: halfHeight}]) {
+    a.anchor = value;
+    test.assertEqual(a.anchor_dx, halfWidth);
+    test.assertEqual(a.anchor_dy, halfHeight);
+  }
+
+  for (let value of [
+    'bottomright', ['right', 'bottom'], [a.width, 'bottom'], ['right', a.height], [a.width, a.height],
+    {x: 'right', y: 'bottom'}, {x: a.width, y: 'bottom'}, {x: 'right', y: a.height}, {x: a.width, y: a.height}]) {
+    a.anchor = value;
+    test.assertEqual(a.anchor_dx, a.width);
+    test.assertEqual(a.anchor_dy, a.height);
   }
 }
 
@@ -112,20 +186,16 @@ function test_sensible_init_defaults() {
   test.assertEqual(a.topleft, [0, 0]);
   test.assertEqual(a.width, images['alien'].width);
   test.assertEqual(a.height, images['alien'].height);
-
-  test.assertEqual(a.anchor, 'center');
   test.assertEqual(a.pos, [Math.floor(images['alien'].width / 2), Math.floor(images['alien'].height / 2)]);
 }
 
 function test_setting_absolute_initial_pos() {
   let a = new Actor('alien');
-  a.anchor = 'bottomright';
+  a.anchor = ['right', 'bottom'];
   a.pos = [100, 200];
   test.assertEqual(a.name, 'alien');
   test.assertEqual(a.angle, 0);
   test.assertEqual(a.topleft, [100 - a.width, 200 - a.height]);
-
-  test.assertEqual(a.anchor, 'bottomright');
   test.assertEqual(a.pos, [100, 200]);
 }
 
@@ -136,8 +206,6 @@ function test_setting_relative_initial_pos_topleft() {
   test.assertEqual(a.name, 'alien');
   test.assertEqual(a.angle, 0);
   test.assertEqual(a.topleft, [500, 500]);
-
-  test.assertEqual(a.anchor, 'topleft');
   test.assertEqual(a.pos, [500, 500]);
 }
 
@@ -149,8 +217,6 @@ function test_setting_relative_initial_pos_center() {
   test.assertEqual(a.angle, 0);
   test.assertEqual(a.topleft, [500 - Math.floor(a.width / 2), 500 - Math.floor(a.height / 2)]);
   test.assertEqual(a.center, [500, 500]);
-
-  test.assertEqual(a.anchor, 'center');
   test.assertEqual(a.pos, [500, 500]);
 }
 
@@ -162,9 +228,29 @@ function test_setting_relative_initial_pos_bottomright() {
   test.assertEqual(a.angle, 0);
   test.assertEqual(a.topleft, [500 - a.width, 500 - a.height]);
   test.assertEqual(a.bottomright, [500, 500]);
-
-  test.assertEqual(a.anchor, 'bottomright');
   test.assertEqual(a.pos, [500, 500]);
+}
+
+function test_set_pos_relative_to_anchor() {
+  let a = new Actor('alien');
+  a.anchor = [10, 10];
+  a.pos = [100, 100];
+  test.assertEqual(a.name, 'alien');
+  test.assertEqual(a.angle, 0);
+  test.assertEqual(a.topleft, [90, 90]);
+  test.assertEqual(a.pos, [100, 100]);
+}
+
+/*
+ * An actor's pos must not drift with continued small rotation.
+ */
+function test_rotation() {
+  let a = new Actor('alien');
+  a.pos = [100, 100];
+  for (let angle = 0; angle < 360; angle++) {
+    a.angle += 1;
+    test.assertEqual(a.pos, [100, 100]);
+  }
 }
 
 function test_destructuring() {
