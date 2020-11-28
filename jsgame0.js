@@ -1,15 +1,27 @@
+/*
+ * An enumeration of buttons that can be received by the on_mouse_* handlers.
+ *
+ * These DO NOT have the same values as the IntEnum in Pygame Zero.
+ * Instead, they match the buttons bitmask in MouseEvent.
+ *
+ * Mouse wheel support is non-standard so WHEEL_UP and WHEEL_DOWN
+ * map to the side buttons (back and forward) on a 5 button mouse.
+ * Predictably, the browser navigates away when you click them so
+ * you may not see them.
+ */
 const mouse = Object.freeze({
   LEFT: 1,
   MIDDLE: 4,
   RIGHT: 2,
-  // Mouse wheel support is non-standard
-  // These map to the side buttons (back and forward) on a 5 button mouse
   WHEEL_UP: 8,
   WHEEL_DOWN: 16
 });
 
 /*
- * Match each enum to the KeyboardEvent.code value.
+ * An enumeration of keys that can be received by the on_key_* handlers.
+ *
+ * These DO NOT have the same values as the IntEnum in Pygame Zero.
+ * Instead, they match the KeyboardEvent.code values.
  *
  * The shift version of keys are added as single character values.
  */
@@ -150,6 +162,12 @@ const keys = Object.freeze({
   LAST: "Last"
 });
 
+/*
+ * Bitmask constants representing modifier keys that may have been
+ * depressed during an on_key_up / on_key_down event.
+ *
+ * These DO NOT have the same values as the IntEnum in Pygame Zero.
+ */
 const keymods = Object.freeze({
   LSHIFT: 1,
   RSHIFT: 2,
@@ -168,6 +186,9 @@ const keymods = Object.freeze({
   MODE: 16384
 });
 
+/*
+ * You can only query the keyboard builtin using the keys enumeration.
+ */
 const keyboard = (function () {
   /*
    * Set of keys that map to multiple characters.
@@ -1215,6 +1236,11 @@ Rect.prototype.toString = function () {
  * I found the Pygame Zero implementation confusing and complicating everything.
  * Here x and y always refer to the topleft corner of the Actor.
  * If you want to change the location of the anchor, then use pos.
+ *
+ * In addition, the name of the image is stored in the "name" attribute and not the "image" attribute.
+ * "image" is too confusing when there are actual image Surfaces, too.
+ *
+ * There is no opacity attribute.
  */
 class Actor {
   constructor(name) {
@@ -1549,6 +1575,7 @@ class Actor {
   draw() {
     screen.blit(this, this.topleft);
   }
+
   _vector_to(target) {
     let [ax=0, ay=0] = this.pos,
         tuple = [],
@@ -1573,10 +1600,18 @@ class Actor {
     tuple.push(Math.sqrt((dx * dx) + (dy * dy)), Math.atan2(dy, dx) * 180 / Math.PI);
     return tuple;
   }
+
+  /*
+   * Return the angle from this actor's position to target, in degrees.
+   */
   angle_to(target) {
     let vector = this._vector_to(target);
     return vector[1];
   }
+
+  /*
+   * Return the distance from this actor's position to target, in pixels.
+   */
   distance_to(target) {
     let vector = this._vector_to(target);
     return vector[0];
@@ -1797,7 +1832,7 @@ const screen = (function () {
   const TWO_PI = Math.PI * 2;
 
   /*
-   * Parse a color given as a string or an Array of 3 Numbers.
+   * Parse a color given as a String or an Array of 3 Numbers.
    */
   function parseColor(color) {
     if (typeof color === 'string') {
@@ -2253,7 +2288,7 @@ const screen = (function () {
       }
       else if (typeof object === 'string') {
         if (!(object in images)) {
-          return;
+          throw new RangeError(`Unknown image "${ object }".`);
         }
         let image = images[object],
             [x=0, y=0] = pos;
@@ -2378,6 +2413,7 @@ const screen = (function () {
         }
       }
 
+      // Start the core game loop
       start = undefined;
       running = window.requestAnimationFrame(loop);
     },
