@@ -67,7 +67,7 @@ function on_key_down(key, mask) {
   for (const k of Object.getOwnPropertyNames(keys)) {
     let v = keys[k];
     if (v === key) {
-      keydown.innerText = `keys.${ k } pressed`;
+      keydown.textContent = `keys.${ k } pressed`;
     }
   }
 }
@@ -76,38 +76,37 @@ function on_key_up(key, mask) {
   for (const k of Object.getOwnPropertyNames(keys)) {
     let v = keys[k];
     if (v === key) {
-      keyup.innerText = `keys.${ k } released`;
+      keyup.textContent = `keys.${ k } released`;
     }
   }
 }
 
 function on_mouse_down(pos, buttons) {
   if ((buttons & mouse.LEFT) > 0) {
-    mousedown.innerText = `Mouse LEFT down @ (${ pos[0] }, ${ pos[1] })`;
+    mousedown.textContent = `Mouse LEFT down @ (${ pos[0] }, ${ pos[1] })`;
     screen.draw.filled_circle(pos, 5, 'red');
   }
   else if ((buttons & mouse.MIDDLE) > 0) {
-    mousedown.innerText = `Mouse MIDDLE down @ (${ pos[0] }, ${ pos[1] })`;
+    mousedown.textContent = `Mouse MIDDLE down @ (${ pos[0] }, ${ pos[1] })`;
     screen.draw.filled_circle(pos, 5, 'green');
   }
   else if ((buttons & mouse.RIGHT) > 0) {
-    mousedown.innerText = `Mouse RIGHT down @ (${ pos[0] }, ${ pos[1] })`;
+    mousedown.textContent = `Mouse RIGHT down @ (${ pos[0] }, ${ pos[1] })`;
     screen.draw.filled_circle(pos, 5, 'blue');
   }
 }
 
 function on_mouse_up(pos, buttons) {
-  mouseup.innerText = `Mouse up @ (${ pos[0] }, ${ pos[1] })`;
+  mouseup.textContent = `Mouse up @ (${ pos[0] }, ${ pos[1] })`;
 }
 
 function on_mouse_move(pos, delta, buttons) {
-  mousemove.innerText = `Mouse move (${ delta[0] }, ${ delta[1] }) @ (${ pos[0] }, ${ pos[1] })`;
+  mousemove.textContent = `Mouse move (${ delta[0] }, ${ delta[1] }) @ (${ pos[0] }, ${ pos[1] })`;
 }
 
 window.addEventListener('load', (event) => {
   reset();
   screen.set_mode('#screen', '#reset', '#pause');
-  screen.go();
 });
 </script>
 </body>

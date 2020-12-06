@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Test the Actor class</title>
   <script src="../jsgame0.js"></script>
-  <script src="../test.js"></script>
+  <script src="test.js"></script>
   <style type="text/css" media="screen">
 body {
   background-color: white;
@@ -557,7 +557,7 @@ function test_distance_to() {
   }
   for (let v of [[32, 45], [32, 47], [34, 45], [34, 47],
                  {x: 32, y: 45}, {x: 32, y: 47}, {x: 34, y: 45}, {x: 34, y: 47}]) {
-    test.assertEqual(a.distance_to(v), Math.sqrt(2));
+    test.assertEqual(a.distance_to(v), Math.SQRT2);
   }
   for (let v of [[30, 42], [30, 50], [36, 42], [36, 50],
                  {x: 30, y: 42}, {x: 30, y: 50}, {x: 36, y: 42}, {x: 36, y: 50},

@@ -61,7 +61,7 @@ li {
 <script>
 for (let button of Array.from(document.querySelectorAll('button'))) {
   let name = button.dataset.name;
-  button.innerText = `Play ${ name }`;
+  button.textContent = `Play ${ name }`;
   button.addEventListener('click', (event) => {
     console.log(name);
     console.assert(name in sounds, `${ name } unexpectedly not in sounds`);
