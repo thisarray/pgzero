@@ -597,6 +597,8 @@ function test_unionall() {
       r3 = new Rect(2, 2, 1, 1),
       r4 = r1.unionall([r2, r3]);
   test.assertEqual(new Rect(-2, -2, 5, 5), r4);
+
+  test.assertEqual(r1.unionall([]), r1);
 }
 
 function test_unionall_ip() {
@@ -605,6 +607,8 @@ function test_unionall_ip() {
       r3 = new Rect(2, 2, 1, 1);
   r1.unionall_ip([r2, r3]);
   test.assertEqual(new Rect(-2, -2, 5, 5), r1);
+
+  test.assertIs(r1.unionall_ip([]), undefined);
 }
 
 function test_colliderect() {

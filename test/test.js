@@ -129,15 +129,19 @@ const test = (function () {
       return result;
     },
     assertRaises() {
+      let args = Array.from(arguments),
+          errorType = args.shift(),
+          fn = args.shift();
       try {
-        arguments[1](...arguments.slice(2));
+        fn(...args);
         console.assert(false, 'Error not thrown.');
+        return false;
       }
       catch (error) {
-        console.assert(error instanceof arguments[0], 'Error of wrong type thrown.');
-        return true;
+        let result = error instanceof errorType;
+        console.assert(result, 'Error of wrong type thrown.');
+        return result;
       }
-      return false;
     },
     main() {
       // Run all global test functions
