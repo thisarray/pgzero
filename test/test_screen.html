@@ -513,6 +513,14 @@ function test_text() {
     screen.draw.textbox(text, new Rect(0, 0, Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2)), config);
     assertCanvasEqual(expected, 'test_text');
   }
+
+  screen.clear();
+  screen.draw.textbox(text, new Rect(0, 0, WIDTH, HEIGHT), {fontname: 'sans-serif', fontsize: 24});
+  assertCanvasEqual(expected, 'test_text');
+
+  screen.clear();
+  screen.draw.textbox(text, new Rect(0, 0, Math.floor(WIDTH / 2), Math.floor(HEIGHT / 2)), {color: 'white'});
+  assertCanvasEqual(expected, 'test_text');
 }
 
 /*
@@ -524,8 +532,8 @@ function test_wrapped_gradient_text() {
   for (const config of [
     {pos: [0, 0], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: 'blue'},
     {topleft: [0, 0], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: 'blue'},
-    {midleft: [0, 9], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: [0, 0, 255]},
-    {bottomleft: [0, 18], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: [0, 0, 255]}]) {
+    {midleft: [0, 18], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: [0, 0, 255]},
+    {bottomleft: [0, 36], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: [0, 0, 255]}]) {
     screen.clear()
     screen.draw.text('gradient\ntext', config);
     assertCanvasEqual(expected, 'test_wrapped_gradient_text');
