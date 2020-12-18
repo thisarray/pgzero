@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alien walk</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/alien.png" alt="alien">
+</section>
+
+<main>
+<h1>Alien walk</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+alien = Actor(&#x27;alien&#x27;)
+
+TITLE = &quot;Alien walk&quot;
+WIDTH = 500
+HEIGHT = alien.height + 20
+
+
+# The initial position of the alien
+alien.topright = 0, 10
+
+
+def draw():
+    &quot;&quot;&quot;Clear the screen and draw the alien.&quot;&quot;&quot;
+    screen.clear()
+    alien.draw()
+
+
+def update():
+    &quot;&quot;&quot;Move the alien by one pixel.&quot;&quot;&quot;
+    alien.x += 1
+
+    # If the alien is off the right hand side of the screen,
+    # move it back off screen to the left-hand side
+    if alien.left &gt; WIDTH:
+        alien.right = 0
+
+</code></pre>
+</main>
+
+<script>
+var alien;
+
+TITLE = "Alien walk";
+WIDTH = 500;
+var HEIGHT;
+
+function reset() {
+  alien = new Actor('alien');
+  // The initial position of the alien
+  alien.topright = [0, 10];
+  HEIGHT = alien.height + 20;
+}
+
+/*
+ * Clear the screen and draw the alien.
+ */
+function draw() {
+  screen.clear();
+  alien.draw();
+}
+
+/*
+ * Move the alien by one pixel.
+ */
+function update() {
+  alien.x += 1;
+
+  // If the alien is off the right hand side of the screen,
+  // move it back off screen to the left-hand side
+  if (alien.left > WIDTH) {
+    alien.right = 0;
+  }
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>

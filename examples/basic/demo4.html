@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alien walk</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/alien.png" alt="alien">
+</section>
+
+<main>
+<h1>Alien walk</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+alien = Actor(&#x27;alien&#x27;, anchor=(&#x27;middle&#x27;, &#x27;bottom&#x27;))
+
+TITLE = &quot;Alien walk&quot;
+WIDTH = 500
+HEIGHT = alien.height + 100
+GROUND = HEIGHT - 10
+
+# The initial position of the alien
+alien.left = 0
+alien.y = GROUND
+
+
+def draw():
+    &quot;&quot;&quot;Clear the screen and draw the alien.&quot;&quot;&quot;
+    screen.fill((0, 0, 0))
+    alien.draw()
+
+
+def update():
+    &quot;&quot;&quot;Move the alien around using the keyboard.&quot;&quot;&quot;
+    if keyboard.left:
+        alien.x -= 2
+    elif keyboard.right:
+        alien.x += 2
+
+    if keyboard.space:
+        alien.y = GROUND - 50
+        animate(alien, y=GROUND, tween=&#x27;bounce_end&#x27;, duration=.5)
+
+    # If the alien is off the screen,
+    # move it back on screen
+    if alien.right &gt; WIDTH:
+        alien.right = WIDTH
+    elif alien.left &lt; 0:
+        alien.left = 0
+
+</code></pre>
+</main>
+
+<script>
+var alien;
+
+TITLE = "Alien walk";
+WIDTH = 500;
+var HEIGHT, GROUND;
+
+function reset() {
+  alien = new Actor('alien');
+  alien.anchor = ['middle', 'bottom'];
+  HEIGHT = alien.height + 100;
+  GROUND = HEIGHT - 10;
+  // The initial position of the alien
+  alien.left = 0;
+  let [x=0, y=0] = alien.pos;
+  alien.pos = [x, GROUND];
+}
+
+/*
+ * Clear the screen and draw the alien.
+ */
+function draw() {
+  screen.fill([0, 0, 0]);
+  alien.draw();
+}
+
+/*
+ * Move the alien around using the keyboard.
+ */
+function update() {
+  let [x=0, y=0] = alien.pos;
+  if (keyboard[keys.LEFT]) {
+    alien.pos = [x - 2, y];
+  }
+  else if (keyboard[keys.RIGHT]) {
+    alien.pos = [x + 2, y];
+  }
+
+  if (keyboard[keys.SPACE]) {
+    alien.pos = [x, GROUND - 50];
+    animate(alien, 0.5, {pos: [x, GROUND]}, 'bounce_end');
+  }
+
+  // If the alien is off the screen,
+  // move it back on screen
+  if (alien.right > WIDTH) {
+    alien.right = WIDTH;
+  }
+  else if (alien.left < 0) {
+    alien.left = 0;
+  }
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>

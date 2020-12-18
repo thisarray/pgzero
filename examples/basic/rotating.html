@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rotating</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/alien.png" alt="alien">
+</section>
+
+<main>
+<h1>rotating</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+WIDTH = HEIGHT = 400
+
+alien = Actor(&#x27;alien&#x27;, center=(200, 200), anchor=(&#x27;center&#x27;, 30))
+
+
+def update():
+    alien.angle += 1
+
+
+def draw():
+    screen.clear()
+    alien.draw()
+</code></pre>
+</main>
+
+<script>
+WIDTH = 400;
+HEIGHT = 400;
+
+var alien;
+
+function reset() {
+  alien = new Actor('alien');
+  alien.anchor = ['center', 30];
+  alien.pos = [200, 200];
+}
+
+function update() {
+  alien.angle += 1;
+}
+
+function draw() {
+  screen.clear();
+  alien.draw();
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>

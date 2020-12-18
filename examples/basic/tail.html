@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tail</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/tail_hook.png" alt="tail_hook">
+  <img class="hidden" src="images/tail_piece.png" alt="tail_piece">
+</section>
+
+<main>
+<h1>tail</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+from math import sin, cos
+
+# Constants that control the wobble effect
+SEGMENT_SIZE = 50  # pixels from one segment to the next
+ANGLE = 2.5  # Base direction for the tail (radians)
+PHASE_STEP = 0.3  # How much the phase differs in each tail piece (radians)
+WOBBLE_AMOUNT = 0.5  # How much of a wobble there is (radians)
+SPEED = 4.0  # How fast the wobble moves (radians per second)
+
+# Dimensions of the screen (pixels)
+WIDTH = 800
+HEIGHT = 800
+
+# The sprites we&#x27;ll use.
+# 10 tail pieces
+tail = [Actor(&#x27;tail_piece&#x27;) for _ in range(10)]
+# Plus a hook piece at the end
+tail += [Actor(&#x27;tail_hook&#x27;)]
+
+# Keep track of time
+t = 0  # seconds
+
+
+def draw():
+    screen.clear()
+    # First draw the even tail pieces
+    for a in tail[::2]:
+        a.draw()
+    # Now draw the odd tail pieces
+    for a in tail[1::2]:
+        a.draw()
+
+
+def update(dt):
+    global t
+    t += dt
+    # Start at the bottom right
+    x = WIDTH - SEGMENT_SIZE // 2
+    y = HEIGHT - SEGMENT_SIZE // 2
+    for seg, a in enumerate(tail):
+        a.pos = x, y
+
+        # Calculate an angle to the next piece which wobbles sinusoidally
+        angle = ANGLE + WOBBLE_AMOUNT * sin(seg * PHASE_STEP + t * SPEED)
+
+        # Get the position of the next piece using trigonometry
+        x += SEGMENT_SIZE * cos(angle)
+        y -= SEGMENT_SIZE * sin(angle)
+</code></pre>
+</main>
+
+<script>
+// Constants that control the wobble effect
+SEGMENT_SIZE = 50;  // pixels from one segment to the next
+ANGLE = 2.5;  // Base direction for the tail (radians)
+PHASE_STEP = 0.3;  // How much the phase differs in each tail piece (radians)
+WOBBLE_AMOUNT = 0.5;  // How much of a wobble there is (radians)
+SPEED = 4.0;  // How fast the wobble moves (radians per second)
+
+// Dimensions of the screen (pixels)
+WIDTH = 800;
+HEIGHT = 800;
+
+var tail, t;
+
+function reset() {
+  // The sprites we'll use.
+  tail = [];
+  // 10 tail pieces
+  for (let i = 0; i < 10; i++) {
+    tail.push(new Actor('tail_piece'));
+  }
+  // Plus a hook piece at the end
+  tail.push(new Actor('tail_hook'));
+
+  // Keep track of time
+  t = 0;  // seconds
+}
+
+function draw() {
+  screen.clear()
+  // First draw the even tail pieces
+  let i = 0;
+  for (let a of tail) {
+    if ((i % 2) === 0) {
+      a.draw();
+    }
+    i++;
+  }
+  // Now draw the odd tail pieces
+  i = 0;
+  for (let a of tail) {
+    if ((i % 2) === 1) {
+      a.draw();
+    }
+    i++;
+  }
+}
+
+function update(dt) {
+  t += dt;
+  // Start at the bottom right
+  let x = WIDTH - Math.floor(SEGMENT_SIZE / 2),
+      y = HEIGHT - Math.floor(SEGMENT_SIZE / 2),
+      i = 0,
+      angle;
+  for (let a of tail) {
+    a.pos = [x, y];
+
+    // Calculate an angle to the next piece which wobbles sinusoidally
+    angle = ANGLE + (WOBBLE_AMOUNT * Math.sin((i * PHASE_STEP) + (t * SPEED)));
+
+    // Get the position of the next piece using trigonometry
+    x += SEGMENT_SIZE * Math.cos(angle);
+    y -= SEGMENT_SIZE * Math.sin(angle);
+
+    i++;
+  }
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>

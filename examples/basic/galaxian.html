@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>galaxian</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/ship.png" alt="ship">
+</section>
+
+<main>
+<h1>galaxian</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+import math
+
+WIDTH = 400
+HEIGHT = 800
+
+# How many wobbles the ship does while diving
+DIVE_WOBBLE_SPEED = 2
+
+# How far the ship wobbles while diving
+DIVE_WOBBLE_AMOUNT = 100
+
+
+def dive_path(t):
+    &quot;&quot;&quot;Get the ship&#x27;s position at time t when diving.
+
+    This is relative to the ship&#x27;s original position (so, at t=0, dive_path(t)
+    returns (0, 0)). Here we flip to the right before diving.
+
+    &quot;&quot;&quot;
+    if t &lt; 0.5:
+        # During the first 0.5s, do a half-loop to the right
+        return (
+            50 * (1 - math.cos(2 * t * math.pi)),
+            -50 * (math.sin(2 * t * math.pi))
+        )
+
+    # For the rest of the time, follow a sinusoidal path downwards
+    t -= 0.5
+    return (
+        DIVE_WOBBLE_AMOUNT * math.cos(t * DIVE_WOBBLE_SPEED),
+        t * 350,
+    )
+
+
+def make_individual_dive(start_pos, flip_x=False):
+    &quot;&quot;&quot;Return a function that will return a dive path from start_pos.
+
+    If flip_x is True then the path will be flipped in the x direction.
+    &quot;&quot;&quot;
+    dir = -1 if flip_x else 1
+    sx, sy = start_pos
+
+    def _dive_path(t):
+        x, y = dive_path(t)
+        return sx + x * dir, sy + y
+
+    return _dive_path
+
+
+def ship_controller_pan(ship, dt):
+    &quot;&quot;&quot;Update the ship when the ship is panning.&quot;&quot;&quot;
+    ship.x += ship.vx * dt
+    if ship.right &gt; WIDTH - 50:
+        ship.vx = -ship.vx
+        ship.right = WIDTH - 50
+    elif ship.left &lt; 50:
+        ship.vx = -ship.vx
+        ship.left = 50
+
+
+def ship_controller_dive(ship, dt):
+    &quot;&quot;&quot;Update the ship when the ship is diving.&quot;&quot;&quot;
+    # Move the ship along the path
+    ship.t += dt
+    ship.pos = ship.dive_path(ship.t)
+
+    # Look ahead along the path to see what direction the ship
+    # is moving, and set the ship&#x27;s rotation accordingly
+    ship.angle = ship.angle_to(ship.dive_path(ship.t + EPSILON))
+
+    # If we&#x27;ve reached the bottom of the screen, resume dive mode
+    if ship.top &gt; HEIGHT:
+        ship.controller_function = ship_controller_pan
+        ship.pos = ship.dive_path(0)
+        ship.angle = 90
+        clock.schedule(start_dive, 3)
+
+
+EPSILON = 0.001
+
+# Create an Actor using the &#x27;ship&#x27; sprite
+ship = Actor(&#x27;ship&#x27;, pos=(100, 100), angle=90)
+ship.angle = 90  # Face upwards
+ship.controller_function = ship_controller_pan
+ship.vx = 100
+
+
+def draw():
+    &quot;&quot;&quot;Just draw the actor on the screen.&quot;&quot;&quot;
+    screen.clear()
+    ship.draw()
+
+
+def update(dt):
+    &quot;&quot;&quot;Update the ship using its current controller function.&quot;&quot;&quot;
+    ship.controller_function(ship, dt)
+
+
+def start_dive():
+    &quot;&quot;&quot;Make the ship start a dive.&quot;&quot;&quot;
+    # flip the dive if we&#x27;re on the left of the screen
+    flip_x = ship.x &lt; WIDTH // 2
+    ship.controller_function = ship_controller_dive
+    ship.dive_path = make_individual_dive(ship.pos, flip_x=flip_x)
+    ship.t = 0
+
+
+clock.schedule(start_dive, 3)
+</code></pre>
+</main>
+
+<script>
+WIDTH = 400;
+HEIGHT = 800;
+
+// How many wobbles the ship does while diving
+DIVE_WOBBLE_SPEED = 2;
+
+// How far the ship wobbles while diving
+DIVE_WOBBLE_AMOUNT = 100;
+
+/*
+ * Get the ship's position at time t when diving.
+ *
+ * This is relative to the ship's original position (so, at t=0, dive_path(t)
+ * returns (0, 0)). Here we flip to the right before diving.
+ */
+function dive_path(t) {
+  let result = [];
+  if (t < 0.5) {
+    // During the first 0.5s, do a half-loop to the right
+    result.push(50 * (1 - Math.cos(2 * t * Math.PI)),
+                -50 * (Math.sin(2 * t * Math.PI)));
+   }
+   else {
+     // For the rest of the time, follow a sinusoidal path downwards
+     t -= 0.5;
+     result.push(DIVE_WOBBLE_AMOUNT * Math.cos(t * DIVE_WOBBLE_SPEED), t * 350);
+   }
+   return result;
+}
+
+/*
+ * Return a function that will return a dive path from start_pos.
+ *
+ * If flip_x is True then the path will be flipped in the x direction.
+ */
+function make_individual_dive(start_pos, flip_x = false) {
+  let [sx=0, sy=0] = start_pos,
+      dir = 1;
+  if (flip_x) {
+    dir = -1;
+  }
+
+  function _dive_path(t) {
+    let [x=0, y=0] = dive_path(t),
+        result = [sx + (x * dir), sy + y];
+    return result;
+  }
+
+  return _dive_path;
+}
+
+/*
+ * Update the ship when the ship is panning.
+ */
+function ship_controller_pan(ship, dt) {
+  ship.x += ship.vx * dt;
+  if (ship.right > (WIDTH - 50)) {
+    ship.vx = -ship.vx;
+    ship.right = WIDTH - 50;
+  }
+  else if (ship.left < 50) {
+    ship.vx = -ship.vx;
+    ship.left = 50;
+  }
+}
+
+/*
+ * Update the ship when the ship is diving.
+ */
+function ship_controller_dive(ship, dt) {
+  // Move the ship along the path
+  ship.t += dt;
+  ship.pos = ship.dive_path(ship.t);
+
+  // Look ahead along the path to see what direction the ship
+  // is moving, and set the ship's rotation accordingly
+  ship.angle = ship.angle_to(ship.dive_path(ship.t + EPSILON));
+
+  // If we've reached the bottom of the screen, resume dive mode
+  if (ship.top > HEIGHT) {
+    ship.controller_function = ship_controller_pan;
+    ship.pos = ship.dive_path(0);
+    ship.angle = 90;
+    clock.schedule(start_dive, 3);
+  }
+}
+
+EPSILON = 0.001;
+
+var ship;
+
+function reset() {
+  // Create an Actor using the 'ship' sprite
+  ship = new Actor('ship');
+  ship.pos = [100, 100];
+  ship.angle = 90;  // Face upwards
+  ship.controller_function = ship_controller_pan;
+  ship.vx = 100;
+
+  clock.schedule(start_dive, 3);
+}
+
+/*
+ * Just draw the actor on the screen.
+ */
+function draw() {
+  screen.clear();
+  ship.draw();
+}
+
+/*
+ * Update the ship using its current controller function.
+ */
+function update(dt) {
+  ship.controller_function(ship, dt);
+}
+
+/*
+ * Make the ship start a dive.
+ */
+function start_dive() {
+  // flip the dive if we're on the left of the screen
+  let flip_x = ship.x < Math.floor(WIDTH / 2);
+  ship.controller_function = ship_controller_dive;
+  ship.dive_path = make_individual_dive(ship.pos, flip_x);
+  ship.t = 0;
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
