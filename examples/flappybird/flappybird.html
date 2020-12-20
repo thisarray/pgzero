@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Bird</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/background.png" alt="background">
+  <img class="hidden" src="images/bird0.png" alt="bird0">
+  <img class="hidden" src="images/bird1.png" alt="bird1">
+  <img class="hidden" src="images/bird2.png" alt="bird2">
+  <img class="hidden" src="images/birddead.png" alt="birddead">
+  <img class="hidden" src="images/bottom.png" alt="bottom">
+  <img class="hidden" src="images/top.png" alt="top">
+</section>
+
+<main>
+<h1>Flappy Bird</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+import pgzrun
+import random
+
+
+TITLE = &#x27;Flappy Bird&#x27;
+WIDTH = 400
+HEIGHT = 708
+
+# These constants control the difficulty of the game
+GAP = 130
+GRAVITY = 0.3
+FLAP_STRENGTH = 6.5
+SPEED = 3
+
+bird = Actor(&#x27;bird1&#x27;, (75, 200))
+bird.dead = False
+bird.score = 0
+bird.vy = 0
+
+storage.setdefault(&#x27;highscore&#x27;, 0)
+
+
+def reset_pipes():
+    pipe_gap_y = random.randint(200, HEIGHT - 200)
+    pipe_top.pos = (WIDTH, pipe_gap_y - GAP // 2)
+    pipe_bottom.pos = (WIDTH, pipe_gap_y + GAP // 2)
+
+
+pipe_top = Actor(&#x27;top&#x27;, anchor=(&#x27;left&#x27;, &#x27;bottom&#x27;))
+pipe_bottom = Actor(&#x27;bottom&#x27;, anchor=(&#x27;left&#x27;, &#x27;top&#x27;))
+reset_pipes()  # Set initial pipe positions.
+
+
+def update_pipes():
+    pipe_top.left -= SPEED
+    pipe_bottom.left -= SPEED
+    if pipe_top.right &lt; 0:
+        reset_pipes()
+        if not bird.dead:
+            bird.score += 1
+            if bird.score &gt; storage[&#x27;highscore&#x27;]:
+                storage[&#x27;highscore&#x27;] = bird.score
+
+
+def update_bird():
+    uy = bird.vy
+    bird.vy += GRAVITY
+    bird.y += (uy + bird.vy) / 2
+    bird.x = 75
+
+    if not bird.dead:
+        if bird.vy &lt; -3:
+            bird.image = &#x27;bird2&#x27;
+        else:
+            bird.image = &#x27;bird1&#x27;
+
+    if bird.colliderect(pipe_top) or bird.colliderect(pipe_bottom):
+        bird.dead = True
+        bird.image = &#x27;birddead&#x27;
+
+    if not 0 &lt; bird.y &lt; 720:
+        bird.y = 200
+        bird.dead = False
+        bird.score = 0
+        bird.vy = 0
+        reset_pipes()
+
+
+def update():
+    update_pipes()
+    update_bird()
+
+
+def on_key_down():
+    if not bird.dead:
+        bird.vy = -FLAP_STRENGTH
+
+
+def draw():
+    screen.blit(&#x27;background&#x27;, (0, 0))
+    pipe_top.draw()
+    pipe_bottom.draw()
+    bird.draw()
+    screen.draw.text(
+        str(bird.score),
+        color=&#x27;white&#x27;,
+        midtop=(WIDTH // 2, 10),
+        fontsize=70,
+        shadow=(1, 1)
+    )
+    screen.draw.text(
+        &quot;Best: {}&quot;.format(storage[&#x27;highscore&#x27;]),
+        color=(200, 170, 0),
+        midbottom=(WIDTH // 2, HEIGHT - 10),
+        fontsize=30,
+        shadow=(1, 1)
+    )
+
+
+pgzrun.go()
+</code></pre>
+</main>
+
+<script>
+TITLE = 'Flappy Bird';
+WIDTH = 400;
+HEIGHT = 708;
+
+// These constants control the difficulty of the game
+GAP = 130;
+GRAVITY = 0.3;
+FLAP_STRENGTH = 6.5;
+SPEED = 3;
+
+var bird, pipe_top, pipe_bottom;
+
+/*
+ * Return a random integer N such that min <= N < max.
+ */
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+function reset_pipes() {
+  let pipe_gap_y = getRandomInteger(200, HEIGHT - 200 + 1);
+  pipe_top.pos = [WIDTH, pipe_gap_y - Math.floor(GAP / 2)];
+  pipe_bottom.pos = [WIDTH, pipe_gap_y + Math.floor(GAP / 2)];
+}
+
+function reset() {
+  bird = new Actor('bird1');
+  bird.center = [75, 200];
+  bird.dead = false;
+  bird.score = 0;
+  bird.vy = 0;
+
+  pipe_top = new Actor('top');
+  pipe_top.anchor = ['left', 'bottom'];
+  pipe_bottom = new Actor('bottom');
+  pipe_bottom.anchor = ['left', 'top'];
+  reset_pipes();  // Set initial pipe positions.
+}
+
+function update_pipes() {
+  pipe_top.left -= SPEED;
+  pipe_bottom.left -= SPEED;
+  if (pipe_top.right < 0) {
+    reset_pipes();
+    if (!bird.dead) {
+      bird.score += 1;
+      let highScore = localStorage.getItem('highscore');
+      if (highScore == null) {
+        highScore = 0;
+      }
+      if (bird.score > highScore) {
+        localStorage.setItem('highscore', bird.score);
+      }
+    }
+  }
+}
+
+function update_bird() {
+  let uy = bird.vy;
+  bird.vy += GRAVITY;
+  bird.y += Math.floor((uy + bird.vy) / 2);
+  bird.x = 75;
+
+  if (!bird.dead) {
+    if (bird.vy < -3) {
+      bird.name = 'bird2';
+    }
+    else {
+      bird.name = 'bird1';
+    }
+  }
+
+  if (bird.colliderect(pipe_top) || bird.colliderect(pipe_bottom)) {
+    bird.dead = true;
+    bird.name = 'birddead';
+  }
+
+  if ((bird.y <= 0) || (720 <= bird.y)) {
+    bird.y = 200;
+    bird.dead = false;
+    bird.score = 0;
+    bird.vy = 0;
+    reset_pipes();
+  }
+}
+
+function update() {
+  update_pipes();
+  update_bird();
+}
+
+function on_key_down() {
+  if (!bird.dead) {
+    bird.vy = -FLAP_STRENGTH;
+  }
+}
+
+function draw() {
+  screen.blit('background', [0, 0]);
+  pipe_top.draw();
+  pipe_bottom.draw();
+  bird.draw();
+  screen.draw.text(bird.score.toFixed(0), {
+    color: 'white',
+    midtop: [Math.floor(WIDTH / 2), 10],
+    fontsize: 70,
+    shadow: [1, 1]
+  });
+
+  let highScore = localStorage.getItem('highscore');
+  if (highScore == null) {
+    highScore = 0;
+  }
+  screen.draw.text(`Best: ${ highScore }`, {
+    color: [200, 170, 0],
+    midbottom: [Math.floor(WIDTH / 2), HEIGHT - 10],
+    fontsize: 30,
+    shadow: [1, 1]
+  });
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
