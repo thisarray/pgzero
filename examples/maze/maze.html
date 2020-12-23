@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>maze</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/pc.png" alt="pc">
+  <img class="hidden" src="images/target.png" alt="target">
+</section>
+
+<main>
+<h1>maze</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+&quot;&quot;&quot;Game to solve a randomly generated maze.
+
+Ideas for improvement:
+
+* Change maze colour every game
+* Randomize the position of the start and goal.
+* Add more collectibles, eg. coins.
+* Count the number of moves.
+* Generate more interesting mazes by biasing the algorithm. Instead of
+  `random.choice()`, try a weighted random choice, perhaps with higher weight
+  for horizontal moves, or going &quot;straight ahead&quot;.
+
+&quot;&quot;&quot;
+
+from itertools import product
+import random
+
+WIDTH = 801
+HEIGHT = 601
+
+LINE_COLOR = &#x27;purple&#x27;
+CELL_SIZE = 20
+cells_x = WIDTH // CELL_SIZE
+cells_y = HEIGHT // CELL_SIZE
+
+lines = []
+edges = set()
+
+TARGET = (cells_x - 1, cells_y - 1)
+
+
+def cells():
+    &quot;&quot;&quot;Iterate over all cells in the grid.&quot;&quot;&quot;
+    return product(range(cells_x), range(cells_y))
+
+
+def cell_to_rect(pos):
+    &quot;&quot;&quot;Get a Rect for the bounds of a cell.&quot;&quot;&quot;
+    x, y = pos
+    return Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+
+
+def neighbours(pos):
+    &quot;&quot;&quot;Iterate over the 4 neighbouring grid cells of the given position.
+
+    Only in-bounds cells will be returned.
+    &quot;&quot;&quot;
+    x, y = pos
+    if x &gt; 0:
+        yield (x - 1, y)
+    if y &gt; 0:
+        yield (x, y - 1)
+    if x &lt; cells_x - 1:
+        yield (x + 1, y)
+    if y &lt; cells_y + 1:
+        yield (x, y + 1)
+
+
+def generate_maze():
+    &quot;&quot;&quot;Generate a new maze.
+
+    We use a simple maze generation algorithm that fills all squares in the
+    grid, visiting each one once. When we have a choice of where to go next,
+    we pick at random. If we have no choices, we backtrack to where we last
+    had a choice, and if we still have a choice, we pick a different choice.
+
+    This algorithm is guaranteed to provide a route from the start point to
+    all points in the grid.
+
+    See https://en.wikipedia.org/wiki/Maze_generation_algorithm for more on
+    maze generation.
+
+    We store the available moves as a set of edges. If `frozenset([a, b])`
+    is in `edges`, then there is a route between a and b.
+
+    Seperately, we compute a list of lines to draw, based on the edges that
+    are *not* available. We add a line in each such case. Calculating the
+    lines to draw one time after the maze is generated makes the game run
+    faster than doing the same operation every frame.
+
+    &quot;&quot;&quot;
+    # Generate the grid
+    edges.clear()
+    unvisited = set(cells())
+    pos = (0, 0)
+    decision_points = []
+    while unvisited:
+        unvisited.discard(pos)
+        if pos == TARGET:
+            # Only one road into target
+            pos = decision_points.pop()
+            continue
+
+        choices = [p for p in neighbours(pos) if p in unvisited]
+        if len(choices) &gt; 1:
+            decision_points.append(pos)
+            next_pos = random.choice(choices)
+        elif len(choices) == 1:
+            next_pos = choices[0]
+        else:
+            pos = decision_points.pop()
+            continue
+
+        edge = frozenset((pos, next_pos))
+        edges.add(edge)
+        pos = next_pos
+
+    # Generate the lines
+    lines.clear()
+    for pos in cells():
+        r = cell_to_rect(pos)
+        x, y = pos
+        if x == 0:
+            lines.append((r.topleft, r.bottomleft))
+        if y == 0:
+            lines.append((r.topleft, r.topright))
+        if frozenset((pos, (x + 1, y))) not in edges:
+            lines.append((r.topright, r.bottomright))
+        if frozenset((pos, (x, y + 1))) not in edges:
+            lines.append((r.bottomleft, r.bottomright))
+
+
+def draw():
+    &quot;&quot;&quot;Draw the screen.
+
+    Because we save a list of the lines to draw when the grid is generated,
+    here we just have to iterate through that list.
+
+    We also draw the PC and target sprites.
+
+    &quot;&quot;&quot;
+    screen.clear()
+    for start, end in lines:
+        screen.draw.line(start, end, LINE_COLOR)
+    target.draw()
+    pc.draw()
+
+
+generate_maze()
+
+pc = Actor(&#x27;pc&#x27;)
+pc.topleft = (0, 0)
+pc.grid_pos = (0, 0)
+
+target = Actor(&#x27;target&#x27;, topleft=cell_to_rect(TARGET).topleft)
+
+
+def on_key_down(key):
+    &quot;&quot;&quot;When a direction key is pressed, move the actor.
+
+    We must check if the actor can move in that direction, ie. that there is
+    an edge between the current position and the position we want to move it
+    to.
+
+    &quot;&quot;&quot;
+    px, py = pc.grid_pos
+    dest = None
+    if key is keys.UP:
+        dest = px, py - 1
+    elif key is keys.DOWN:
+        dest = px, py + 1
+    elif key is keys.LEFT:
+        dest = px - 1, py
+    elif key is keys.RIGHT:
+        dest = px + 1, py
+
+    if dest:
+        if frozenset((pc.grid_pos, dest)) in edges:
+            dest_cell = cell_to_rect(dest)
+            animate(
+                pc,
+                duration=0.1,
+                tween=&#x27;accel_decel&#x27;,
+                topleft=dest_cell.topleft
+            )
+            pc.grid_pos = dest
+            if dest == TARGET:
+                clock.schedule_unique(reset, 0.3)
+                tone.play(&#x27;A4&#x27;, 0.3)
+            else:
+                tone.play(&#x27;E3&#x27;, 0.05)
+        else:
+            tone.play(&#x27;Ab3&#x27;, 0.2)
+
+
+def reset():
+    &quot;&quot;&quot;Reset by generating a new maze and moving the PC back to the start.&quot;&quot;&quot;
+    generate_maze()
+    pc.topleft = pc.grid_pos = (0, 0)
+
+
+</code></pre>
+</main>
+
+<script>
+/*
+ * Game to solve a randomly generated maze.
+ *
+ * Ideas for improvement:
+ *
+ * * Change maze colour every game
+ * * Randomize the position of the start and goal.
+ * * Add more collectibles, eg. coins.
+ * * Count the number of moves.
+ * * Generate more interesting mazes by biasing the algorithm. Instead of
+ *   `random.choice()`, try a weighted random choice, perhaps with higher weight
+ *   for horizontal moves, or going "straight ahead".
+ *
+ */
+
+WIDTH = 801;
+HEIGHT = 601;
+
+LINE_COLOR = 'purple';
+CELL_SIZE = 20;
+CELLS_X = Math.floor(WIDTH / CELL_SIZE);
+CELLS_Y = Math.floor(HEIGHT / CELL_SIZE);
+
+TARGET = [CELLS_X - 1, CELLS_Y - 1];
+
+var lines, edges, pc, target;
+
+/*
+ * Iterate over all cells in the grid.
+ */
+function cells() {
+  let result = [];
+  for (let x = 0; x < CELLS_X; x++) {
+    for (let y = 0; y < CELLS_Y; y++) {
+      result.push([x, y]);
+    }
+  }
+  return result;
+}
+
+/*
+ * Get a Rect for the bounds of a cell.
+ */
+function cell_to_rect(pos) {
+  let [x=0, y=0] = pos;
+  return new Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+}
+
+/*
+ * Iterate over the 4 neighbouring grid cells of the given position.
+ *
+ * Only in-bounds cells will be returned.
+ */
+function neighbours(pos) {
+  let [x=0, y=0] = pos,
+      result = [];
+  if (x > 0) {
+    result.push([x - 1, y]);
+  }
+  if (y > 0) {
+    result.push([x, y - 1]);
+  }
+  if (x < (CELLS_X - 1)) {
+    result.push([x + 1, y]);
+  }
+  if (y < (CELLS_Y - 1)) {
+    result.push([x, y + 1]);
+  }
+  return result;
+}
+
+/*
+ * Return a random integer N such that min <= N < max.
+ */
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+/*
+ * Generate a new maze.
+ *
+ * We use a simple maze generation algorithm that fills all squares in the
+ * grid, visiting each one once. When we have a choice of where to go next,
+ * we pick at random. If we have no choices, we backtrack to where we last
+ * had a choice, and if we still have a choice, we pick a different choice.
+ *
+ * This algorithm is guaranteed to provide a route from the start point to
+ * all points in the grid.
+ *
+ * See https://en.wikipedia.org/wiki/Maze_generation_algorithm for more on
+ * maze generation.
+ *
+ * We store the available moves as a set of edges. If `frozenset([a, b])`
+ * is in `edges`, then there is a route between a and b.
+ *
+ * Seperately, we compute a list of lines to draw, based on the edges that
+ * are *not* available. We add a line in each such case. Calculating the
+ * lines to draw one time after the maze is generated makes the game run
+ * faster than doing the same operation every frame.
+ *
+ */
+function generate_maze() {
+  // Generate the grid
+  let unvisited = new Set(),
+      pos = [0, 0],
+      decision_points = [],
+      choices = [],
+      next_pos;
+  edges.clear();
+  for (let [x, y] of cells()) {
+    // JavaScript hack to get around the fact Arrays are not unique (not immutable and not hashable)
+    unvisited.add(`${ x }x${ y }`);
+  }
+  while (unvisited.size > 0) {
+    unvisited.delete(pos.join('x'));
+    if ((pos[0] === TARGET[0]) && (pos[1] === TARGET[1])) {
+      // Only one road into target
+      pos = decision_points.pop();
+      continue;
+    }
+
+    choices = [];
+    for (let p of neighbours(pos)) {
+      if (unvisited.has(p.join('x'))) {
+        choices.push(p);
+      }
+    }
+    if (choices.length > 1) {
+      decision_points.push(pos);
+      next_pos = choices[getRandomInteger(0, choices.length)];
+    }
+    else if (choices.length === 1) {
+      next_pos = choices[0];
+    }
+    else {
+      pos = decision_points.pop();
+      continue;
+    }
+
+    // JavaScript hack to get around the fact Arrays are not unique (not immutable and not hashable)
+    // Need to add both directions to save on the checks later
+    edges.add(`${ pos.join('x') }to${ next_pos.join('x') }`);
+    edges.add(`${ next_pos.join('x') }to${ pos.join('x') }`);
+    pos = next_pos;
+  }
+
+  // Generate the lines
+  lines = [];
+  for (let p of cells()) {
+    let r = cell_to_rect(p),
+        [x=0, y=0] = p;
+    if (x === 0) {
+      lines.push([r.topleft, r.bottomleft]);
+    }
+    if (y === 0) {
+      lines.push([r.topleft, r.topright]);
+    }
+    if (!edges.has(`${ p.join('x') }to${ x + 1 }x${ y }`)) {
+      lines.push([r.topright, r.bottomright]);
+    }
+    if (!edges.has(`${ p.join('x') }to${ x }x${ y + 1 }`)) {
+      lines.push([r.bottomleft, r.bottomright]);
+    }
+  }
+}
+
+/*
+ * Draw the screen.
+ *
+ * Because we save a list of the lines to draw when the grid is generated,
+ * here we just have to iterate through that list.
+ *
+ * We also draw the PC and target sprites.
+ *
+ */
+function draw() {
+  screen.clear();
+  for (let [start, end] of lines) {
+    screen.draw.line(start, end, LINE_COLOR);
+  }
+  target.draw();
+  pc.draw();
+}
+
+/*
+ * When a direction key is pressed, move the actor.
+ *
+ * We must check if the actor can move in that direction, ie. that there is
+ * an edge between the current position and the position we want to move it
+ * to.
+ *
+ */
+function on_key_down(key) {
+  let [px=0, py=0] = pc.grid_pos,
+      dest;
+  if (key === keys.UP) {
+    dest = [px, py - 1];
+  }
+  else if (key === keys.DOWN) {
+    dest = [px, py + 1];
+  }
+  else if (key === keys.LEFT) {
+    dest = [px - 1, py];
+  }
+  else if (key === keys.RIGHT) {
+    dest = [px + 1, py];
+  }
+
+  if (dest != null) {
+    if (edges.has(`${ pc.grid_pos.join('x') }to${ dest.join('x') }`)) {
+      animate(pc, 0.1, {topleft: cell_to_rect(dest).topleft}, 'accel_decel');
+      pc.grid_pos = dest;
+      if ((dest[0] === TARGET[0]) && (dest[1] === TARGET[1])) {
+        clock.schedule_unique(reset, 0.3);
+      }
+    }
+  }
+}
+
+/*
+ * Reset by generating a new maze and moving the PC back to the start.
+ */
+function reset() {
+  lines = [];
+  edges = new Set();
+
+  generate_maze();
+
+  pc = new Actor('pc');
+  pc.topleft = [0, 0];
+  pc.grid_pos = [0, 0];
+
+  target = new Actor('target');
+  target.topleft = cell_to_rect(TARGET).topleft;
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
