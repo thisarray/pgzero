@@ -183,10 +183,13 @@ function test_sensible_init_defaults() {
   let a = new Actor('alien');
   test.assertEqual(a.name, 'alien');
   test.assertEqual(a.angle, 0);
+  test.assertEqual(a.opacity, 1);
   test.assertEqual(a.topleft, [0, 0]);
   test.assertEqual(a.width, images['alien'].width);
   test.assertEqual(a.height, images['alien'].height);
   test.assertEqual(a.pos, [Math.floor(images['alien'].width / 2), Math.floor(images['alien'].height / 2)]);
+  test.assertEqual(a.posx, Math.floor(images['alien'].width / 2));
+  test.assertEqual(a.posy, Math.floor(images['alien'].height / 2));
 }
 
 function test_setting_absolute_initial_pos() {
@@ -195,40 +198,49 @@ function test_setting_absolute_initial_pos() {
   a.pos = [100, 200];
   test.assertEqual(a.name, 'alien');
   test.assertEqual(a.angle, 0);
+  test.assertEqual(a.opacity, 1);
   test.assertEqual(a.topleft, [100 - a.width, 200 - a.height]);
   test.assertEqual(a.pos, [100, 200]);
+  test.assertEqual(a.posx, 100);
+  test.assertEqual(a.posy, 200);
 }
 
 function test_setting_relative_initial_pos_topleft() {
   let a = new Actor('alien');
-  a.anchor = 'topleft';
-  a.pos = [500, 500];
+  a.topleft = [500, 500];
   test.assertEqual(a.name, 'alien');
   test.assertEqual(a.angle, 0);
+  test.assertEqual(a.opacity, 1);
   test.assertEqual(a.topleft, [500, 500]);
-  test.assertEqual(a.pos, [500, 500]);
+  test.assertEqual(a.pos, [500 + Math.floor(a.width / 2), 500 + Math.floor(a.height / 2)]);
+  test.assertEqual(a.posx, 500 + Math.floor(a.width / 2));
+  test.assertEqual(a.posy, 500 + Math.floor(a.height / 2));
 }
 
 function test_setting_relative_initial_pos_center() {
   let a = new Actor('alien');
-  a.anchor = 'center';
-  a.pos = [500, 500];
+  a.center = [500, 500];
   test.assertEqual(a.name, 'alien');
   test.assertEqual(a.angle, 0);
+  test.assertEqual(a.opacity, 1);
   test.assertEqual(a.topleft, [500 - Math.floor(a.width / 2), 500 - Math.floor(a.height / 2)]);
   test.assertEqual(a.center, [500, 500]);
   test.assertEqual(a.pos, [500, 500]);
+  test.assertEqual(a.posx, 500);
+  test.assertEqual(a.posy, 500);
 }
 
 function test_setting_relative_initial_pos_bottomright() {
   let a = new Actor('alien');
-  a.anchor = 'bottomright';
-  a.pos = [500, 500];
+  a.bottomright = [500, 500];
   test.assertEqual(a.name, 'alien');
   test.assertEqual(a.angle, 0);
+  test.assertEqual(a.opacity, 1);
   test.assertEqual(a.topleft, [500 - a.width, 500 - a.height]);
   test.assertEqual(a.bottomright, [500, 500]);
-  test.assertEqual(a.pos, [500, 500]);
+  test.assertEqual(a.pos, [500 - Math.floor(a.width / 2), 500 - Math.floor(a.height / 2)]);
+  test.assertEqual(a.posx, 500 - Math.floor(a.width / 2));
+  test.assertEqual(a.posy, 500 - Math.floor(a.height / 2));
 }
 
 function test_set_pos_relative_to_anchor() {
@@ -237,8 +249,11 @@ function test_set_pos_relative_to_anchor() {
   a.pos = [100, 100];
   test.assertEqual(a.name, 'alien');
   test.assertEqual(a.angle, 0);
+  test.assertEqual(a.opacity, 1);
   test.assertEqual(a.topleft, [90, 90]);
   test.assertEqual(a.pos, [100, 100]);
+  test.assertEqual(a.posx, 100);
+  test.assertEqual(a.posy, 100);
 }
 
 /*
@@ -250,6 +265,14 @@ function test_rotation() {
   for (let angle = 0; angle < 360; angle++) {
     a.angle += 1;
     test.assertEqual(a.pos, [100, 100]);
+  }
+}
+
+function test_opacity() {
+  let a = new Actor('alien');
+  for (let opacity of [-1, 0, 0.25, 0.5, 0.75, 1, 42]) {
+    a.opacity = opacity;
+    test.assertEqual(a.opacity, opacity);
   }
 }
 
@@ -291,6 +314,27 @@ function test_calculated_attributes() {
   test.assertEqual([a.centerx, a.bottom], a.midbottom);
   test.assertEqual([a.left, a.centery], a.midleft);
   test.assertEqual([a.right, a.centery], a.midright);
+}
+
+function test_position() {
+  let a = new Actor('alien'),
+      midx = a.left + Math.floor(a.width / 2),
+      midy = a.top + Math.floor(a.height / 2);
+  test.assertEqual(a.pos, [midx, midy]);
+  test.assertEqual(a.posx, midx);
+  test.assertEqual(a.posy, midy);
+
+  for (let i = 0; i < 100; i++) {
+    a.posx = i;
+    test.assertEqual(a.pos, [i, midy]);
+  }
+  a.pos = [midx, midy];
+  test.assertEqual(a.posx, midx);
+  test.assertEqual(a.posy, midy);
+  for (let i = 0; i < 100; i++) {
+    a.posy = i;
+    test.assertEqual(a.pos, [midx, i]);
+  }
 }
 
 function test_left() {
