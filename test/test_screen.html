@@ -58,6 +58,14 @@ The game screen appears here if your browser supports the Canvas API.
 <output></output>
 </section>
 
+<section id="test_transparent" class="test">
+<h2>test_transparent</h2>
+
+<h3 class="actual">Actual</h3>
+
+<output></output>
+</section>
+
 <section id="test_fill_gradient" class="test">
 <h2>test_fill_gradient</h2>
 
@@ -225,9 +233,33 @@ function test_clear() {
     'black',
     'Black',
     'BLACK',
+    '#000',
+    '#000f',
+    '#000F',
+    '#000000',
+    '#000000ff',
+    '#000000FF',
+    'rgb(0, 0, 0)',
+    'rgba(0, 0, 0, 1)',
+    'RGB(0, 0, 0)',
+    'RGBA(0, 0, 0, 1)',
+    'rgb(0 0 0)',
+    'rgba(0 0 0 / 1)',
+    'RGB(0 0 0)',
+    'RGBA(0 0 0 / 1)',
+    'rgba(0, 0, 0, 100%)',
+    'RGBA(0, 0, 0, 100%)',
+    'rgba(0 0 0 / 100%)',
+    'RGBA(0 0 0 / 100%)',
     [0, 0, 0],
     [-1, -2, -3],
-    [-255, -255, -255]]) {
+    [-255, -255, -255],
+    [0, 0, 0, 255],
+    [-1, -2, -3, 255],
+    [-255, -255, -255, 255]]) {
+    screen.clear(color);
+    assertCanvasEqual(expected, 'test_clear');
+
     // Test filling the screen with black
     screen.fill(color);
     assertCanvasEqual(expected, 'test_clear');
@@ -239,6 +271,38 @@ function test_clear() {
     assertCanvasEqual(expected, 'test_clear');
     screen.fill('black', color);
     assertCanvasEqual(expected, 'test_clear');
+  }
+}
+
+function test_transparent() {
+  const expected = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAABkCAYAAADDhn8LAAAAZElEQVR4nO3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4GM48wABem1MwwAAAABJRU5ErkJggg==';
+  for (const color of [
+    'transparent',
+    'Transparent',
+    'TRANSPARENT',
+    '#0000',
+    '#00000000',
+    '#3210',
+    '#65432100',
+    'rgba(0, 0, 0, 0)',
+    'RGBA(0, 0, 0, 0)',
+    'rgba(0 0 0 / 0)',
+    'RGBA(0 0 0 / 0)',
+    'rgba(0, 0, 0, 0%)',
+    'RGBA(0, 0, 0, 0%)',
+    'rgba(0 0 0 / 0%)',
+    'RGBA(0 0 0 / 0%)',
+    [0, 0, 0, 0],
+    [3, 2, 1, 0],
+    [30, 20, 10, 0]]) {
+    screen.clear(color);
+    assertCanvasEqual(expected, 'test_transparent');
+
+    screen.fill(color);
+    assertCanvasEqual(expected, 'test_transparent');
+
+    screen.draw.filled_rect(new Rect([0, 0], [100, 100]), color);
+    assertCanvasEqual(expected, 'test_transparent');
   }
 }
 
@@ -266,20 +330,8 @@ function test_line() {
  * draw.line raises errors as expected.
  */
 function test_line_errors() {
-  try {
-    screen.draw.line(2, yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
-  try {
-    screen.draw.line([2], yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
+  test.assertRaises(TypeError, screen.draw.line, 2, yellow);
+  test.assertRaises(TypeError, screen.draw.line, [2], yellow);
 }
 
 /*
@@ -296,20 +348,8 @@ function test_circle() {
  * draw.circle raises errors as expected.
  */
 function test_circle_errors() {
-  try {
-    screen.draw.circle(2, yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
-  try {
-    screen.draw.circle([2], yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
+  test.assertRaises(TypeError, screen.draw.circle, 2, yellow);
+  test.assertRaises(TypeError, screen.draw.circle, [2], yellow);
 }
 
 /*
@@ -326,20 +366,8 @@ function test_filled_circle() {
  * draw.filled_circle raises errors as expected.
  */
 function test_filled_circle_errors() {
-  try {
-    screen.draw.filled_circle(2, yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
-  try {
-    screen.draw.filled_circle([2], yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
+  test.assertRaises(TypeError, screen.draw.filled_circle, 2, yellow);
+  test.assertRaises(TypeError, screen.draw.filled_circle, [2], yellow);
 }
 
 /*
@@ -356,20 +384,8 @@ function test_polygon() {
  * draw.polygon raises errors as expected.
  */
 function test_polygon_errors() {
-  try {
-    screen.draw.polygon(2, yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
-  try {
-    screen.draw.polygon([2], yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
+  test.assertRaises(TypeError, screen.draw.polygon, 2, yellow);
+  test.assertRaises(TypeError, screen.draw.polygon, [2], yellow);
 }
 
 /*
@@ -386,20 +402,8 @@ function test_filled_polygon() {
  * draw.filled_polygon raises errors as expected.
  */
 function test_filled_polygon_errors() {
-  try {
-    screen.draw.filled_polygon(2, yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
-  try {
-    screen.draw.filled_polygon([2], yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
+  test.assertRaises(TypeError, screen.draw.filled_polygon, 2, yellow);
+  test.assertRaises(TypeError, screen.draw.filled_polygon, [2], yellow);
 }
 
 /*
@@ -416,20 +420,8 @@ function test_rect() {
  * draw.rect raises errors as expected.
  */
 function test_rect_errors() {
-  try {
-    screen.draw.rect(2, yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
-  try {
-    screen.draw.rect([2], yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
+  test.assertRaises(TypeError, screen.draw.rect, 2, yellow);
+  test.assertRaises(TypeError, screen.draw.rect, [2], yellow);
 }
 
 /*
@@ -446,20 +438,8 @@ function test_filled_rect() {
  * draw.filled_rect raises errors as expected.
  */
 function test_filled_rect_errors() {
-  try {
-    screen.draw.filled_rect(2, yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
-  try {
-    screen.draw.filled_rect([2], yellow);
-    console.assert(false, 'TypeError not raised.');
-  }
-  catch (error) {
-    test.assertTrue(error instanceof TypeError);
-  }
+  test.assertRaises(TypeError, screen.draw.filled_rect, 2, yellow);
+  test.assertRaises(TypeError, screen.draw.filled_rect, [2], yellow);
 }
 
 function test_text() {
@@ -474,6 +454,8 @@ function test_text() {
     {pos: [0, 0], color: 'white'},
     {pos: [0, 0], color: [255, 255, 255]},
     {pos: [0, 0], color: [300, 400, 500]},
+    {pos: [0, 0], color: [255, 255, 255, 255]},
+    {pos: [0, 0], color: [300, 400, 500, 600]},
     {pos: [0, 0], color: 'white', gcolor: 'white'},
     {pos: [0, 0], color: 'white', ocolor: 'white'},
     {pos: [0, 0], color: 'white', scolor: 'white'},
@@ -485,6 +467,8 @@ function test_text() {
     {topleft: [0, 0], color: 'white'},
     {topleft: [0, 0], color: [255, 255, 255]},
     {topleft: [0, 0], color: [300, 400, 500]},
+    {topleft: [0, 0], color: [255, 255, 255, 255]},
+    {topleft: [0, 0], color: [300, 400, 500, 600]},
     {topleft: [0, 0], color: 'white', gcolor: 'white'},
     {topleft: [0, 0], color: 'white', ocolor: 'white'},
     {topleft: [0, 0], color: 'white', scolor: 'white'},
@@ -533,7 +517,10 @@ function test_wrapped_gradient_text() {
     {pos: [0, 0], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: 'blue'},
     {topleft: [0, 0], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: 'blue'},
     {midleft: [0, 18], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: [0, 0, 255]},
-    {bottomleft: [0, 36], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: [0, 0, 255]}]) {
+    {bottomleft: [0, 36], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0], gcolor: [0, 0, 255]},
+    {topleft: [0, 0], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0, 255], gcolor: 'blue'},
+    {midleft: [0, 18], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: [0, 0, 255, 255]},
+    {bottomleft: [0, 36], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0, 255], gcolor: [0, 0, 255, 255]}]) {
     screen.clear()
     screen.draw.text('gradient\ntext', config);
     assertCanvasEqual(expected, 'test_wrapped_gradient_text');
