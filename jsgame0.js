@@ -755,26 +755,28 @@ const clock = (function () {
       queue = queue.filter(q => (q[0] !== callback));
     },
 
-    _clear_queue() {
+    _clearQueue() {
       queue = [];
     },
 
     /*
      * Return a copy of queue for testing.
      */
-    _get_queue() {
+    _getQueue() {
       return queue.slice();
     },
 
     /*
      * Loop through all the callbacks in queue and call any that are due.
      */
-    _update_queue(dt) {
-      let result = [], newETA;
+    _updateQueue(dt) {
+      let due = [],
+          result = [],
+          newETA;
       for (let [callback, eta, next] of queue) {
         newETA = eta - dt;
         if (newETA <= 0) {
-          callback();
+          due.push(callback);
           if (next > 0) {
             result.push([callback, next, next]);
           }
@@ -784,6 +786,12 @@ const clock = (function () {
         }
       }
       queue = result;
+
+      // Call the callbacks after updating the queue to avoid
+      // the lost update problem if a callback modifies the queue
+      for (let callback of due) {
+        callback();
+      }
     }
   }
 })();
@@ -1262,46 +1270,33 @@ Rect.prototype.toString = function () {
  */
 class Actor {
   constructor(name) {
-    if (!(name in images)) {
-      throw new RangeError(`Unknown image "${ name }".`);
-    }
-
+    // Use the setter for the name check
     this.name = name;
-    let image = images[this.name];
-    this._rect = new Rect(0, 0, image.width, image.height);
 
-    // Initialize the anchor at center
-    // x offset in pixels from the topleft corner to the anchor
-    this.anchor_dx = Math.floor(image.width / 2);
+    // If it is a Number, x offset in pixels from the topleft corner to the anchor
+    // If it is a String, relative offset that is lazily evaluated
+    this.anchor_dx = 'center';
 
-    // y offset in pixels from the topleft corner to the anchor
-    this.anchor_dy = Math.floor(image.height / 2);
+    // If it is a Number, y offset in pixels from the topleft corner to the anchor
+    // If it is a String, relative offset that is lazily evaluated
+    this.anchor_dy = 'center';
+
+    // Initialize the anchor at center with the topleft corner at (0, 0)
+    this.posx = Math.floor(this.width / 2);
+    this.posy = Math.floor(this.height / 2);
 
     this.angle = 0;
     this.opacity = 1.0;
   }
 
-  get x() {
-    return this._rect.x;
+  get name() {
+    return this._name;
   }
-  set x(x) {
-    this._rect.x = x;
-  }
-  get y() {
-    return this._rect.y;
-  }
-  set y(y) {
-    this._rect.y = y;
-  }
-  get width() {
-    return this._rect.width;
-  }
-  get height() {
-    return this._rect.height;
-  }
-
-  get anchor() {
-    return [this.anchor_dx, this.anchor_dy];
+  set name(name) {
+    if (!(name in images)) {
+      throw new RangeError(`Unknown image "${ name }".`);
+    }
+    this._name = name;
   }
 
   /*
@@ -1315,40 +1310,40 @@ class Actor {
     if (typeof anchor === 'string') {
       let cleaned = anchor.trim().toLowerCase();
       if (cleaned === 'topleft') {
-        this.anchor_dx = 0;
-        this.anchor_dy = 0;
+        this.anchor_dx = 'left';
+        this.anchor_dy = 'top';
       }
       else if (cleaned === 'midtop') {
-        this.anchor_dx = Math.floor(this.width / 2);
-        this.anchor_dy = 0;
+        this.anchor_dx = 'center';
+        this.anchor_dy = 'top';
       }
       else if (cleaned === 'topright') {
-        this.anchor_dx = this.width;
-        this.anchor_dy = 0;
+        this.anchor_dx = 'right';
+        this.anchor_dy = 'top';
       }
       else if (cleaned === 'midleft') {
-        this.anchor_dx = 0;
-        this.anchor_dy = Math.floor(this.height / 2);
+        this.anchor_dx = 'left';
+        this.anchor_dy = 'center';
       }
       else if (cleaned === 'center') {
-        this.anchor_dx = Math.floor(this.width / 2);
-        this.anchor_dy = Math.floor(this.height / 2);
+        this.anchor_dx = 'center';
+        this.anchor_dy = 'center';
       }
       else if (cleaned === 'midright') {
-        this.anchor_dx = this.width;
-        this.anchor_dy = Math.floor(this.height / 2);
+        this.anchor_dx = 'right';
+        this.anchor_dy = 'center';
       }
       else if (cleaned === 'bottomleft') {
-        this.anchor_dx = 0;
-        this.anchor_dy = this.height;
+        this.anchor_dx = 'left';
+        this.anchor_dy = 'bottom';
       }
       else if (cleaned === 'midbottom') {
-        this.anchor_dx = Math.floor(this.width / 2);
-        this.anchor_dy = this.height;
+        this.anchor_dx = 'center';
+        this.anchor_dy = 'bottom';
       }
       else if (cleaned === 'bottomright') {
-        this.anchor_dx = this.width;
-        this.anchor_dy = this.height;
+        this.anchor_dx = 'right';
+        this.anchor_dy = 'bottom';
       }
       else {
         throw new RangeError(`Unknown anchor "${ anchor }". Must be "topleft", "midtop", "topright", "midleft", "center", "midright", "bottomleft", "midbottom", or "bottomright".`);
@@ -1372,13 +1367,13 @@ class Actor {
       else if (typeof x === 'string') {
         cleaned = x.trim().toLowerCase();
         if (cleaned === 'left') {
-          this.anchor_dx = 0;
+          this.anchor_dx = 'left';
         }
         else if ((cleaned === 'center') || (cleaned === 'middle')) {
-          this.anchor_dx = Math.floor(this.width / 2);
+          this.anchor_dx = 'center';
         }
         else if (cleaned === 'right') {
-          this.anchor_dx = this.width;
+          this.anchor_dx = 'right';
         }
         else {
           throw new RangeError(`Unknown anchor "${ x }". Must be "left", "center", "middle", or "right".`);
@@ -1394,13 +1389,13 @@ class Actor {
       else if (typeof y === 'string') {
         cleaned = y.trim().toLowerCase();
         if (cleaned === 'top') {
-          this.anchor_dy = 0;
+          this.anchor_dy = 'top';
         }
         else if ((cleaned === 'center') || (cleaned === 'middle')) {
-          this.anchor_dy = Math.floor(this.height / 2);
+          this.anchor_dy = 'center';
         }
         else if (cleaned === 'bottom') {
-          this.anchor_dy = this.height;
+          this.anchor_dy = 'bottom';
         }
         else {
           throw new RangeError(`Unknown anchor "${ y }". Must be "top", "center", "middle", or "bottom".`);
@@ -1415,29 +1410,84 @@ class Actor {
 
     throw new TypeError('Unrecognized anchor type.');
   }
+
   get pos() {
-    return [this.x + this.anchor_dx, this.y + this.anchor_dy];
+    return [this.posx, this.posy];
   }
   set pos(pos) {
     let [x=0, y=0] = pos;
-    this.x = x - this.anchor_dx;
-    this.y = y - this.anchor_dy;
-  }
-  get posx() {
-    return this.x + this.anchor_dx;
-  }
-  set posx(posx) {
-    this.x = posx - this.anchor_dx;
-  }
-  get posy() {
-    return this.y + this.anchor_dy;
-  }
-  set posy(posy) {
-    this.y = posy - this.anchor_dy;
+    this.posx = x;
+    this.posy = y;
   }
 
   /*
-   * Attributes delegated to the underlying Rect object.
+   * Return an Array containing the x and y pixel offsets from the topleft corner to the anchor.
+   *
+   * This allows us to lazily evaluate the offsets.
+   */
+  _calculateAnchor() {
+    let result = [];
+    if (typeof this.anchor_dx === 'number') {
+      result.push(this.anchor_dx);
+    }
+    else if (typeof this.anchor_dx === 'string') {
+      if (this.anchor_dx === 'left') {
+        result.push(0);
+      }
+      else if (this.anchor_dx === 'center') {
+        result.push(Math.floor(this.width / 2));
+      }
+      else if (this.anchor_dx === 'right') {
+        result.push(this.width);
+      }
+    }
+
+    if (typeof this.anchor_dy === 'number') {
+      result.push(this.anchor_dy);
+    }
+    else if (typeof this.anchor_dy === 'string') {
+      if (this.anchor_dy === 'top') {
+        result.push(0);
+      }
+      else if (this.anchor_dy === 'center') {
+        result.push(Math.floor(this.height / 2));
+      }
+      else if (this.anchor_dy === 'bottom') {
+        result.push(this.height);
+      }
+    }
+
+    return result;
+  }
+
+  /*
+   * Make x, y, width, and height available as attributes to mimic the Rect class.
+   */
+  get x() {
+    let [dx=0, dy=0] = this._calculateAnchor();
+    return this.posx - dx;
+  }
+  set x(x) {
+    let [dx=0, dy=0] = this._calculateAnchor();
+    this.posx = x + dx;
+  }
+  get y() {
+    let [dx=0, dy=0] = this._calculateAnchor();
+    return this.posy - dy;
+  }
+  set y(y) {
+    let [dx=0, dy=0] = this._calculateAnchor();
+    this.posy = y + dy;
+  }
+  get width() {
+    return images[this._name].width;
+  }
+  get height() {
+    return images[this._name].height;
+  }
+
+  /*
+   * Same attributes as the Rect class based on x, y, width, and height above.
    */
   get top() {
     return this.y;
@@ -1592,7 +1642,7 @@ class Actor {
   }
 
   draw() {
-    screen.blit(this, this.topleft);
+    screen.blit(this, this._calculateAnchor());
   }
 
   _vector_to(target) {
@@ -1748,22 +1798,34 @@ class Inbetweener {
   /*
    * Clear the animation queue.
    */
-  static _clear_queue() {
-    this.queue = [];
+  static _clearQueue() {
+    Inbetweener.queue = [];
   }
 
   /*
    * Loop through all the animations in the animation queue and tween.
    */
-  static _update_queue(dt) {
-    let result = [];
-    for (let a of this.queue) {
+  static _updateQueue(dt) {
+    let due = [],
+        result = [];
+    for (let a of Inbetweener.queue) {
       a.update(dt);
-      if (!a.done) {
+      if (a.done) {
+        if (typeof a.callback === 'function') {
+          due.push(a.callback);
+        }
+      }
+      else {
         result.push(a);
       }
     }
-    this.queue = result;
+    Inbetweener.queue = result;
+
+    // Call the callbacks after updating the queue to avoid
+    // the lost update problem if a callback modifies the queue
+    for (let callback of due) {
+      callback();
+    }
   }
 
   constructor(puppet, duration, attributes, tween, callback) {
@@ -1831,9 +1893,6 @@ class Inbetweener {
       for (let [k, v] of this.attributes) {
         this.puppet[k] = v.end;
       }
-      if (typeof this.callback === 'function') {
-        this.callback();
-      }
     }
     else {
       // Interpolate between start and end based on the tween function
@@ -1894,9 +1953,7 @@ function animate() {
 }
 
 /*
- * The global screen object representing your game screen.
- *
- * It mimicks the Python object using Immediately Invoked Function Expression/Self-Executing Anonymous Function.
+ * Global object representing your game screen.
  */
 const screen = (function () {
   const DEFAULT_COLOR = 'white';
@@ -1910,7 +1967,7 @@ const screen = (function () {
   const TWO_PI = Math.PI * 2;
 
   /*
-   * Parse a color given as a String or an Array of 3 Numbers.
+   * Parse a color given as a String or an Array of Numbers.
    */
   function parseColor(color) {
     if (typeof color === 'string') {
@@ -2038,8 +2095,8 @@ const screen = (function () {
     const elapsed = (timestamp - start) / 1000;
     start = timestamp;
 
-    clock._update_queue(elapsed);
-    Inbetweener._update_queue(elapsed);
+    clock._updateQueue(elapsed);
+    Inbetweener._updateQueue(elapsed);
 
     if (hasUpdate) {
       window.update(elapsed);
@@ -2386,9 +2443,10 @@ const screen = (function () {
         return;
       }
 
+      let [x=0, y=0] = pos,
+          image;
       if (object instanceof Actor) {
-        let image = images[object.name],
-            [x=0, y=0] = object.anchor;
+        image = images[object.name];
         context.save();
         if (typeof object.opacity === 'number') {
           context.globalAlpha = Math.max(Math.min(object.opacity, 1), 0);
@@ -2398,12 +2456,12 @@ const screen = (function () {
         // Canvas rotates clockwise but Pygame Zero rotates counterclockwise (anticlockwise)
         context.rotate(-(object.angle % 360) * Math.PI / 180);
         // Move the origin to the topleft to draw the image
+        // x and y contain pixel offsets from the topleft corner to the anchor
         context.translate(-x, -y);
         context.drawImage(image, 0, 0);
         context.restore();
       }
       else if (object instanceof Surface) {
-        let [x=0, y=0] = pos;
         context.save();
         context.putImageData(object.imageData, x, y);
         context.restore();
@@ -2412,8 +2470,7 @@ const screen = (function () {
         if (!(object in images)) {
           throw new RangeError(`Unknown image "${ object }".`);
         }
-        let image = images[object],
-            [x=0, y=0] = pos;
+        image = images[object];
         context.save();
         context.drawImage(image, x, y);
         context.restore();
@@ -2469,8 +2526,8 @@ const screen = (function () {
             pause = document.querySelector(pauseID);
       if (reset != null) {
         reset.addEventListener('click', (event) => {
-          clock._clear_queue();
-          Inbetweener._clear_queue();
+          clock._clearQueue();
+          Inbetweener._clearQueue();
           if (typeof window.reset === 'function') {
             window.reset();
           }
@@ -2482,7 +2539,7 @@ const screen = (function () {
       }
       if (pause != null) {
         pause.addEventListener('click', (event) => {
-          if (event.target.textContent == 'Pause') {
+          if (event.target.textContent === 'Pause') {
             screen.stop();
             event.target.textContent = 'Unpause';
           }
@@ -2570,7 +2627,221 @@ const screen = (function () {
  */
 
 /*
- * Wrapper around an ImageData object to support scripts that rely on pixel manipulation.
+ * A JavaScript wrapper around the Gamepad API based on pygame.joystick.
+ *
+ * It only supports axes and buttons.
+ */
+class Joystick {
+  /*
+   * Array of Gamepad indices.
+   */
+  static _controllers = [];
+
+  /*
+   * Boolean flag indicating whether the joystick module is initialized.
+   */
+  static _initialized = false;
+
+  /*
+   * Add the detected gamepad in this event to the list of controllers.
+   */
+  static _connect(event) {
+    let index = event.gamepad.index;
+    if (!Joystick._controllers.includes(index)) {
+      Joystick._controllers.push(index);
+    }
+  }
+
+  /*
+   * Remove the detected gamepad in this event from the list of controllers.
+   *
+   * We only set the Gamepad index to null. If we modified the _controllers
+   * array, then existing Joystick instances may map to the wrong joystick.
+   *
+   * This means if you disconnect a joystick and connect the same joystick
+   * again, the number of joysticks will increase by 1. That is, the
+   * original disconnected joystick is not removed and 1 is added for the
+   * newly connected joystick.
+   */
+  static _disconnect(event) {
+    let index = event.gamepad.index;
+    for (let i = 0; i < Joystick._controllers.length; i++) {
+      if (Joystick._controllers[i] === index) {
+        Joystick._controllers[i] = null;
+      }
+    }
+  }
+
+  /*
+   * Initialize the joystick module.
+   */
+  static init() {
+    if (Joystick._initialized) {
+      return;
+    }
+    window.addEventListener('gamepadconnected', Joystick._connect);
+    window.addEventListener('gamepaddisconnected', Joystick._disconnect);
+    Joystick._controllers = [];
+    Joystick._initialized = true;
+  }
+
+  /*
+   * Uninitialize the joystick module.
+   */
+  static quit() {
+    if (!Joystick._initialized) {
+      return;
+    }
+    window.removeEventListener('gamepadconnected', Joystick._connect);
+    window.removeEventListener('gamepaddisconnected', Joystick._disconnect);
+    Joystick._controllers = [];
+    Joystick._initialized = false;
+  }
+
+  /*
+   * Return true if the joystick module is initialized.
+   */
+  static get_init() {
+    return Joystick._initialized;
+  }
+
+  /*
+   * Return the number of joysticks.
+   */
+  static get_count() {
+    return Joystick._controllers.length;
+  }
+
+  constructor(index) {
+    if (typeof index !== 'number') {
+      throw new TypeError(
+        'index must be a Number in [0, Joystick.get_count()).');
+    }
+    if (index < 0) {
+      throw new RangeError(
+        'index must be a Number in [0, Joystick.get_count()).');
+    }
+    if (Joystick._controllers.length <= index) {
+      throw new RangeError(
+        'index must be a Number in [0, Joystick.get_count()).');
+    }
+
+    /*
+     * Number index in Joystick._controllers NOT the Gamepad index.
+     */
+    this.index = index;
+  }
+
+  /*
+   * Return the Number joystick instance id.
+   */
+  get_instance_id() {
+    return this.index;
+  }
+
+  /*
+   * Return the underlying delegate Gamepad object.
+   */
+  _getGamepad() {
+    if (this.index < 0) {
+      return null;
+    }
+    if (Joystick._controllers.length <= this.index) {
+      return null;
+    }
+    let gamepadIndex = Joystick._controllers[this.index];
+    if (gamepadIndex == null) {
+      return null;
+    }
+    return navigator.getGamepads()[gamepadIndex];
+  }
+
+  /*
+   * Return the String joystick GUID containing identifying information.
+   */
+  get_guid() {
+    let gamepad = this._getGamepad();
+    if (gamepad != null) {
+      return gamepad.id;
+    }
+    return '';
+  }
+
+  /*
+   * Return the number of axes on a joystick.
+   */
+  get_numaxes() {
+    let gamepad = this._getGamepad();
+    if (gamepad != null) {
+      return gamepad.axes.length;
+    }
+    return 0;
+  }
+
+  /*
+   * Return the current position of the indexed axis in [-1, 1].
+   *
+   * The axis number must be an integer from 0 to get_numaxes() - 1.
+   *
+   * When using gamepads both the control sticks and the analog triggers
+   * are usually reported as axes.
+   */
+  get_axis(i, fallback = 0) {
+    if (typeof i !== 'number') {
+      throw new TypeError(
+        'i must be a non-negative Number less than the number of axes.');
+    }
+    if (i < 0) {
+      throw new RangeError(
+        'i must be a non-negative Number less than the number of axes.');
+    }
+
+    let gamepad = this._getGamepad();
+    if (gamepad != null) {
+      if (i < gamepad.axes.length) {
+        return gamepad.axes[i];
+      }
+    }
+    return fallback;
+  }
+
+  /*
+   * Return the number of buttons on a joystick.
+   */
+  get_numbuttons() {
+    let gamepad = this._getGamepad();
+    if (gamepad != null) {
+      return gamepad.buttons.length;
+    }
+    return 0;
+  }
+
+  /*
+   * Return true if the indexed button is currently being pressed.
+   */
+  get_button(i, fallback = false) {
+    if (typeof i !== 'number') {
+      throw new TypeError(
+        'i must be a non-negative Number less than the number of buttons.');
+    }
+    if (i < 0) {
+      throw new RangeError(
+        'i must be a non-negative Number less than the number of buttons.');
+    }
+
+    let gamepad = this._getGamepad();
+    if (gamepad != null) {
+      if (i < gamepad.buttons.length) {
+        return gamepad.buttons[i].pressed;
+      }
+    }
+    return fallback;
+  }
+}
+
+/*
+ * A JavaScript wrapper around an ImageData object
+ * to support scripts that rely on pixel manipulation.
  *
  * There is no pixel array or screen buffer to which you can write in JavaScript.
  * The closest thing is drawing to and then getting the pixels for a portion of the screen.
@@ -2694,6 +2965,7 @@ class Surface {
       else {
         c = 0;
       }
+      // ImageData clamps the value if c is not in [0, 255]
       this.imageData.data[start+i] = c;
     }
   }

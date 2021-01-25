@@ -77,30 +77,40 @@ function test_anchor() {
   let anchors = ['topleft', 'midtop', 'topright', 'midleft', 'center', 'midright', 'bottomleft', 'midbottom', 'bottomright'],
       a = new Actor('alien'),
       halfWidth = Math.floor(a.width / 2),
-      halfHeight = Math.floor(a.height / 2);
+      halfHeight = Math.floor(a.height / 2),
+      expected = [];
   for (let anchor of anchors) {
     for (let variant of [anchor, anchor.toUpperCase(), anchor.substring(0, 1).toUpperCase() + anchor.substring(1)]) {
       for (let value of [variant, '  ' + variant, variant + '  ', '  ' + variant + '  ']) {
+        expected = [];
         a.anchor = value;
         if (anchor.includes('left')) {
-          test.assertEqual(a.anchor_dx, 0);
+          test.assertEqual(a.anchor_dx, 'left');
+          expected.push(0);
         }
         else if (anchor.includes('right')) {
-          test.assertEqual(a.anchor_dx, a.width);
+          test.assertEqual(a.anchor_dx, 'right');
+          expected.push(a.width);
         }
         else {
-          test.assertEqual(a.anchor_dx, halfWidth);
+          test.assertEqual(a.anchor_dx, 'center');
+          expected.push(halfWidth);
         }
 
         if (anchor.includes('top')) {
-          test.assertEqual(a.anchor_dy, 0);
+          test.assertEqual(a.anchor_dy, 'top');
+          expected.push(0);
         }
         else if (anchor.includes('bottom')) {
-          test.assertEqual(a.anchor_dy, a.height);
+          test.assertEqual(a.anchor_dy, 'bottom');
+          expected.push(a.height);
         }
         else {
-          test.assertEqual(a.anchor_dy, halfHeight);
+          test.assertEqual(a.anchor_dy, 'center');
+          expected.push(halfHeight);
         }
+
+        test.assertEqual(a._calculateAnchor(), expected);
 
         if (anchor !== 'center') {
           try {
@@ -141,30 +151,61 @@ function test_anchor() {
     }
   }
 
-  for (let value of [
-    'topleft', ['left', 'top'], [0, 'top'], ['left', 0], [0, 0],
-    {x: 'left', y: 'top'}, {x: 0, y: 'top'}, {x: 'left', y: 0}, {x: 0, y: 0}]) {
-    a.anchor = value;
-    test.assertEqual(a.anchor_dx, 0);
-    test.assertEqual(a.anchor_dy, 0);
-  }
+  for (let xAnchor of ['left', 'center', 'middle', 'right', 0, halfWidth, a.width,
+                       'LEFT', 'Center', 'middlE', 'RIGHT',
+                       '  LEFT', '  center  ', '  MIDDLE  ', 'RIGHT  ']) {
+    for (let yAnchor of ['top', 'center', 'middle', 'bottom', 0, halfHeight, a.height,
+                         'TOP', 'Center', 'middlE', 'BOTTOM',
+                         '  TOP', '  center  ', '  MIDDLE  ', 'BOTTOM  ']) {
+      for (let anchor of [[xAnchor, yAnchor], {x: xAnchor, y: yAnchor}]) {
+        a.anchor = anchor;
 
-  for (let value of [
-    'center', ['center', 'center'], ['center', 'middle'], ['middle', 'center'], ['middle', 'middle'],
-    [halfWidth, 'center'], [halfWidth, 'middle'], ['center', halfHeight], ['middle', halfHeight], [halfWidth, halfHeight],
-    {x: 'center', y: 'center'}, {x: 'center', y: 'middle'}, {x: 'middle', y: 'center'}, {x: 'middle', y: 'middle'},
-    {x: halfWidth, y: 'center'}, {x: halfWidth, y: 'middle'}, {x: 'center', y: halfHeight}, {x: 'middle', y: halfHeight}, {x: halfWidth, y: halfHeight}]) {
-    a.anchor = value;
-    test.assertEqual(a.anchor_dx, halfWidth);
-    test.assertEqual(a.anchor_dy, halfHeight);
-  }
+        expected = xAnchor;
+        if (typeof expected === 'string') {
+          expected = expected.trim().toLowerCase();
+        }
+        if (expected === 'middle') {
+          expected = 'center';
+        }
+        test.assertEqual(a.anchor_dx, expected);
 
-  for (let value of [
-    'bottomright', ['right', 'bottom'], [a.width, 'bottom'], ['right', a.height], [a.width, a.height],
-    {x: 'right', y: 'bottom'}, {x: a.width, y: 'bottom'}, {x: 'right', y: a.height}, {x: a.width, y: a.height}]) {
-    a.anchor = value;
-    test.assertEqual(a.anchor_dx, a.width);
-    test.assertEqual(a.anchor_dy, a.height);
+        expected = yAnchor;
+        if (typeof expected === 'string') {
+          expected = expected.trim().toLowerCase();
+        }
+        if (expected === 'middle') {
+          expected = 'center';
+        }
+        test.assertEqual(a.anchor_dy, expected);
+      }
+    }
+  }
+}
+
+function test_calculateAnchor() {
+  let a = new Actor('alien'),
+      halfWidth = Math.floor(a.width / 2),
+      halfHeight = Math.floor(a.height / 2);
+  for (let [anchor, expected] of [
+    ['left', 0],
+    ['center', halfWidth],
+    ['right', a.width],
+    [0, 0],
+    [halfWidth, halfWidth],
+    [a.width, a.width]]) {
+    a.anchor_dx = anchor;
+    test.assertEqual(a._calculateAnchor(), [expected, halfHeight]);
+  }
+  a.anchor_dx = 'center';
+  for (let [anchor, expected] of [
+    ['top', 0],
+    ['center', halfHeight],
+    ['bottom', a.height],
+    [0, 0],
+    [halfHeight, halfHeight],
+    [a.height, a.height]]) {
+    a.anchor_dy = anchor;
+    test.assertEqual(a._calculateAnchor(), [halfWidth, expected]);
   }
 }
 
@@ -177,6 +218,21 @@ function test_actor() {
   catch (error) {
     test.assertTrue(error instanceof RangeError);
   }
+}
+
+function test_name() {
+  let a = new Actor('alien');
+  test.assertEqual(a._name, 'alien');
+  test.assertEqual(a.name, 'alien');
+  try {
+    a.name = 'foobar';
+    console.assert(false, 'RangeError not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof RangeError);
+  }
+  test.assertEqual(a._name, 'alien');
+  test.assertEqual(a.name, 'alien');
 }
 
 function test_sensible_init_defaults() {
