@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test music</title>
+  <script src="../jsgame0.js"></script>
+  <script src="test.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+form div {
+  margin: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="musicLoader" class="hidden">
+  <audio class="hidden" controls preload="auto" src="../examples/basic/music/handel_mp3.mp3" data-name="mp3">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="../examples/tetra_puzzle/music/hhavok_main.ogg" data-name="ogg">Your browser does not support the audio element.</audio>
+</section>
+
+<h1>Test music</h1>
+
+<form id="player">
+<div>
+  <button type="button" id="playMp3">Play mp3</button>
+  <button type="button" id="playOgg">Play ogg</button>
+</div>
+<div>
+  <button type="button" id="playOnceMp3">Play once mp3</button>
+  <button type="button" id="playOnceOgg">Play once ogg</button>
+</div>
+<div>
+  <button type="button" id="queueMp3">Queue mp3</button>
+  <button type="button" id="queueOgg">Queue ogg</button>
+</div>
+<div>
+  <button type="button" id="pause">Pause</button>
+  <button type="button" id="unpause">Unpause</button>
+  <button type="button" id="rewind">Rewind</button>
+  <button type="button" id="stop">Stop</button>
+</div>
+<div>
+  <label for="volume">Volume</label>
+  <input type="range" id="volume" name="volume" min="0" max="10" step="1" value="10">
+</div>
+</form>
+
+<script>
+function on_music_end() {
+  console.log('music ended');
+}
+
+const form = document.querySelector('#player');
+document.querySelector('#playMp3').addEventListener('click', (event) => {
+  music.play('mp3');
+  test.assertEqual(music.get_pos(), 0);
+  test.assertTrue(music.is_playing());
+  event.preventDefault();
+});
+document.querySelector('#playOgg').addEventListener('click', (event) => {
+  music.play('ogg');
+  test.assertEqual(music.get_pos(), 0);
+  test.assertTrue(music.is_playing());
+  event.preventDefault();
+});
+document.querySelector('#playOnceMp3').addEventListener('click', (event) => {
+  music.play_once('mp3');
+  test.assertEqual(music.get_pos(), 0);
+  test.assertTrue(music.is_playing());
+  event.preventDefault();
+});
+document.querySelector('#playOnceOgg').addEventListener('click', (event) => {
+  music.play_once('ogg');
+  test.assertEqual(music.get_pos(), 0);
+  test.assertTrue(music.is_playing());
+  event.preventDefault();
+});
+document.querySelector('#queueMp3').addEventListener('click', (event) => {
+  music.queue('mp3');
+  event.preventDefault();
+});
+document.querySelector('#queueOgg').addEventListener('click', (event) => {
+  music.queue('ogg');
+  event.preventDefault();
+});
+document.querySelector('#pause').addEventListener('click', (event) => {
+  music.pause();
+  test.assertFalse(music.is_playing());
+  event.preventDefault();
+});
+document.querySelector('#unpause').addEventListener('click', (event) => {
+  music.unpause();
+  test.assertTrue(music.is_playing());
+  event.preventDefault();
+});
+document.querySelector('#rewind').addEventListener('click', (event) => {
+  music.rewind();
+  test.assertEqual(music.get_pos(), 0);
+  event.preventDefault();
+});
+document.querySelector('#stop').addEventListener('click', (event) => {
+  music.stop();
+  test.assertFalse(music.is_playing());
+  test.assertTrue(music.get_pos() > 0);
+  event.preventDefault();
+});
+form.volume.addEventListener('change', (event) => {
+  let v = parseInt(form.volume.value, 10) / 10;
+  music.set_volume(v);
+  test.assertEqual(music.get_volume(), v);
+  event.preventDefault();
+});
+
+window.addEventListener('load', (event) => {
+  music.LOAD('#musicLoader audio');
+  form.volume.value = music.get_volume() * 10;
+
+  test.assertFalse(music.is_playing());
+  test.assertEqual(music.get_pos(), 0);
+  test.assertEqual(music.get_volume(), 1);
+});
+</script>
+</body>
+
+</html>
