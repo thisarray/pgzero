@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>music</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="musicLoader" class="hidden">
+  <audio class="hidden" controls preload="auto" src="music/handel_mp3.mp3" data-name="handel_mp3">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="music/handel_ogg.ogg" data-name="handel_ogg">Your browser does not support the audio element.</audio>
+</section>
+
+<main>
+<h1>music</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+playing = None
+
+music.set_volume(0.5)
+
+tracks = [
+    &#x27;handel_mp3&#x27;,
+    &#x27;handel_ogg&#x27;,
+]
+
+
+def draw():
+    if not playing:
+        msg = &#x27;Click to start&#x27;
+    else:
+        msg = &#x27;Playing &#x27; + playing
+    screen.clear()
+    screen.draw.text(
+        msg,
+        fontsize=70,
+        center=(400, 300)
+    )
+
+
+def on_mouse_down():
+    global playing
+
+    t = tracks.pop(0)
+    music.play(t)
+    playing = t
+    tracks.append(t)
+
+
+def on_music_end():
+    global playing
+    playing = None
+</code></pre>
+</main>
+
+<script>
+var playing, tracks;
+
+function reset() {
+  playing = null;
+
+  music.set_volume(0.5);
+
+  tracks = [
+    'handel_mp3',
+    'handel_ogg'
+  ];
+}
+
+function draw() {
+  let msg;
+  if (playing == null) {
+    msg = 'Click to start';
+  }
+  else {
+    msg = 'Playing ' + playing;
+  }
+  screen.clear();
+  screen.draw.text(msg, {
+    fontsize: 70,
+    center: [400, 300]
+  });
+}
+
+function on_mouse_down() {
+  let t = tracks.shift();
+  music.play(t);
+  playing = t;
+  tracks.push(t);
+}
+
+function on_music_end() {
+  playing = null;
+}
+
+window.addEventListener('load', (event) => {
+  music.LOAD('#musicLoader audio');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
