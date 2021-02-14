@@ -155,14 +155,14 @@ clock.schedule_interval(new_missile, 5)
 WIDTH = 800;
 HEIGHT = 400;
 
-GRAVITY = 5;
-TRAIL_LENGTH = 500;
-WIND_SCALE = 8;
-WIND_AMOUNT_X = 2.5;
-WIND_AMOUNT_Y = 1.5;
+const GRAVITY = 5;
+const TRAIL_LENGTH = 500;
+const WIND_SCALE = 8;
+const WIND_AMOUNT_X = 2.5;
+const WIND_AMOUNT_Y = 1.5;
 
-TRAIL_BRIGHTNESS = 100;
-FLARE_COLOR = [255, 220, 160];
+const TRAIL_BRIGHTNESS = 100;
+const FLARE_COLOR = [255, 220, 160];
 
 var missiles, wind_x, wind_y;
 
@@ -213,7 +213,7 @@ class Missile {
     }
 
     // If the trail is off the bottom of the screen, kill the missile
-    if (this.trail[this.trail.length - 1][1] > HEIGHT) {
+    if (this.trail[this.trail.length-1][1] > HEIGHT) {
       missiles.delete(this);
     }
   }
@@ -224,7 +224,7 @@ class Missile {
         break;
       }
       let start = this.trail[i],
-          end = this.trail[i + 1],
+          end = this.trail[i+1],
           c = TRAIL_BRIGHTNESS * (1.0 - i / TRAIL_LENGTH),
           color = [c, c, c];
       screen.draw.line(start, end, color);

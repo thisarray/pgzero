@@ -185,13 +185,13 @@ def on_mouse_move(pos):
 <script>
 WIDTH = 600;
 HEIGHT = 800;
-BALL_SIZE = 10;
-MARGIN = 50;
+const BALL_SIZE = 10;
+const MARGIN = 50;
 
-BRICKS_X = 10;
-BRICKS_Y = 5;
-BRICK_W = Math.floor((WIDTH - (2 * MARGIN)) / BRICKS_X);
-BRICK_H = 25;
+const BRICKS_X = 10;
+const BRICKS_Y = 5;
+const BRICK_W = Math.floor((WIDTH - (2 * MARGIN)) / BRICKS_X);
+const BRICK_H = 25;
 
 var ball, bat, bricks;
 
@@ -202,7 +202,7 @@ function hsv_color(h, s, v) {
   if (s === 0) {
     return [v * 255, v * 255, v * 255];
   }
-  let i = Math.trunc(h * 6);
+  let i = Math.trunc(h * 6),
       f = (h * 6) - i,
       p = v * (1 - s),
       q = v * (1 - (s * f)),
@@ -242,7 +242,6 @@ function getRandom(min, max) {
 function reset() {
   // First, let's do bricks
   bricks = [];
-
   for (let x = 0; x < BRICKS_X; x++) {
     for (let y = 0; y < BRICKS_Y; y++) {
       let brick = new Rect((x * BRICK_W) + MARGIN, (y * BRICK_H) + MARGIN, BRICK_W - 1, BRICK_H - 1),
@@ -357,7 +356,7 @@ function update_bat_vx() {
   while (bat.recent_vxs.length > 5) {
     bat.recent_vxs.shift();
   }
-  vx = bat.recent_vxs.reduce((accumulator, currentValue) => accumulator + currentValue, 0)
+  vx = bat.recent_vxs.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
   vx /= bat.recent_vxs.length;
   bat.vx = Math.min(10, Math.max(-10, vx));
 }

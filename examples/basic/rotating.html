@@ -22,7 +22,7 @@ body {
 
 <body>
 <section id="imageLoader" class="hidden">
-  <img class="hidden" src="images/alien.png" alt="alien">
+  <img class="hidden" src="images/alien.png" alt="alien" data-name="alien">
 </section>
 
 <main>
@@ -62,8 +62,8 @@ var alien;
 
 function reset() {
   alien = new Actor('alien');
+  alien.center = [200, 200];
   alien.anchor = ['center', 30];
-  alien.pos = [200, 200];
 }
 
 function update() {

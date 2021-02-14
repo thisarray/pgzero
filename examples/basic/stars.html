@@ -177,14 +177,17 @@ for _ in range(5):
 <script>
 WIDTH = 1000;
 HEIGHT = Math.floor((1000 * 9) / 16);
-ACCEL = 1.0;  // Warp factor per second
-DRAG = 0.71;  // Fraction of speed per second
-TRAIL_LENGTH = 2;
-MIN_WARP_FACTOR = 0.1;
-BOUNDS = new Rect(0, 0, WIDTH, HEIGHT);
-FONT = 'eunomia_regular';
+const ACCEL = 1.0;  // Warp factor per second
+const DRAG = 0.71;  // Fraction of speed per second
+const TRAIL_LENGTH = 2;
+const MIN_WARP_FACTOR = 0.1;
+const BOUNDS = new Rect(0, 0, WIDTH, HEIGHT);
+const FONT = 'eunomia_regular';
 
-var warp_factor, centerx, centery, stars;
+const centerx = Math.floor(WIDTH / 2);
+const centery = Math.floor(HEIGHT / 2);
+
+var warp_factor, stars;
 
 class Star {
   constructor(pos, vel) {
@@ -199,10 +202,9 @@ class Star {
    */
   get end_pos() {
     let [x=0, y=0] = this.pos,
-        [vx=0, vy=0] = this.vel,
-        result = [x - (vx * warp_factor * TRAIL_LENGTH / 60),
-                  y - (vy * warp_factor * TRAIL_LENGTH / 60)];
-    return result;
+        [vx=0, vy=0] = this.vel;
+    return [x - (vx * warp_factor * TRAIL_LENGTH / 60),
+            y - (vy * warp_factor * TRAIL_LENGTH / 60)];
   }
 }
 
@@ -217,21 +219,19 @@ function draw() {
   }
 
   // Head-up-display
-  screen.draw.text(
-    `III Warp ${ warp_factor.toFixed(1) } III`, {
-      fontsize: 40,
-      fontname: FONT,
-      midbottom: [Math.floor(WIDTH / 2), HEIGHT - 40],
-      color: [180, 160, 0],
-      gcolor: [120, 100, 0]
+  screen.draw.text(`III Warp ${ warp_factor.toFixed(1) } III`, {
+    fontsize: 40,
+    fontname: FONT,
+    midbottom: [Math.floor(WIDTH / 2), HEIGHT - 40],
+    color: [180, 160, 0],
+    gcolor: [120, 100, 0]
   });
-  screen.draw.text(
-    "Hold SPACE to accelerate", {
-      fontsize: 30,
-      fontname: FONT,
-      midbottom: [Math.floor(WIDTH / 2), HEIGHT - 8],
-      color: [90, 80, 0],
-      gcolor: [50, 40, 0]
+  screen.draw.text("Hold SPACE to accelerate", {
+    fontsize: 30,
+    fontname: FONT,
+    midbottom: [Math.floor(WIDTH / 2), HEIGHT - 8],
+    color: [90, 80, 0],
+    gcolor: [50, 40, 0]
   });
 }
 
@@ -257,6 +257,7 @@ function update(dt) {
     // Pick a direction and speed
     let angle = getRandom(-Math.PI, Math.PI),
         speed = 255 * Math.pow(getRandom(0.3, 1.0), 2),
+
         // Turn the direction into position and velocity vectors
         dx = Math.cos(angle),
         dy = Math.sin(angle),
@@ -290,8 +291,6 @@ function update(dt) {
 
 function reset() {
   warp_factor = MIN_WARP_FACTOR;
-  centerx = Math.floor(WIDTH / 2);
-  centery = Math.floor(HEIGHT / 2);
   stars = [];
 
   // Jump-start the star field

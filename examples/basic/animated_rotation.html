@@ -22,8 +22,8 @@ body {
 
 <body>
 <section id="imageLoader" class="hidden">
-  <img class="hidden" src="images/block.png" alt="block">
-  <img class="hidden" src="images/ship.png" alt="ship">
+  <img class="hidden" src="images/block.png" alt="block" data-name="block">
+  <img class="hidden" src="images/ship.png" alt="ship" data-name="ship">
 </section>
 
 <main>
@@ -205,23 +205,21 @@ WIDTH = 400;
 HEIGHT = 400;
 
 // Define four sets of coordinates for the block to move between
-BLOCK_POSITIONS = [
+const BLOCK_POSITIONS = [
   [350, 50],
   [350, 350],
   [50, 350],
-  [50, 50],
+  [50, 50]
 ];
-var BLOCK_INDEX, block, ship;
+var block_index, block, ship;
 
 function reset() {
-  BLOCK_INDEX = 0;
+  block_index = 0;
 
   block = new Actor('block');
-  block.anchor = 'center';
-  block.pos = [50, 50];
+  block.center = [50, 50];
   ship = new Actor('ship');
-  ship.anchor = 'center';
-  ship.pos = [200, 200];
+  ship.center = [200, 200];
 
   move_block();  // start one move now
   clock.schedule_interval(move_block, 2);  // schedule subsequent moves
@@ -244,8 +242,8 @@ function draw() {
  * Move the block to the next position over 1 second.
  */
 function move_block() {
-  let attributes = {pos: BLOCK_POSITIONS[BLOCK_INDEX]};
-  BLOCK_INDEX = (BLOCK_INDEX + 1) % BLOCK_POSITIONS.length;
+  let attributes = {pos: BLOCK_POSITIONS[block_index]};
+  block_index = (block_index + 1) % BLOCK_POSITIONS.length;
   animate(block, 1, attributes, 'bounce_end');
 }
 

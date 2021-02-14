@@ -22,7 +22,7 @@ body {
 
 <body>
 <section id="imageLoader" class="hidden">
-  <img class="hidden" src="images/alien.png" alt="alien">
+  <img class="hidden" src="images/alien.png" alt="alien" data-name="alien">
 </section>
 
 <main>
@@ -94,7 +94,7 @@ function draw() {
  * Move the alien by one pixel.
  */
 function update() {
-  alien.x += 1;
+  alien.posx += 1;
 
   // If the alien is off the right hand side of the screen,
   // move it back off screen to the left-hand side

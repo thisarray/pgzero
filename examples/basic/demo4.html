@@ -22,7 +22,7 @@ body {
 
 <body>
 <section id="imageLoader" class="hidden">
-  <img class="hidden" src="images/alien.png" alt="alien">
+  <img class="hidden" src="images/alien.png" alt="alien" data-name="alien">
 </section>
 
 <main>
@@ -92,8 +92,7 @@ function reset() {
   GROUND = HEIGHT - 10;
   // The initial position of the alien
   alien.left = 0;
-  let [x=0, y=0] = alien.pos;
-  alien.pos = [x, GROUND];
+  alien.posy = GROUND;
 }
 
 /*
@@ -108,17 +107,16 @@ function draw() {
  * Move the alien around using the keyboard.
  */
 function update() {
-  let [x=0, y=0] = alien.pos;
   if (keyboard[keys.LEFT]) {
-    alien.pos = [x - 2, y];
+    alien.posx -= 2;
   }
   else if (keyboard[keys.RIGHT]) {
-    alien.pos = [x + 2, y];
+    alien.posx += 2;
   }
 
   if (keyboard[keys.SPACE]) {
-    alien.pos = [x, GROUND - 50];
-    animate(alien, 0.5, {pos: [x, GROUND]}, 'bounce_end');
+    alien.posy = GROUND - 50;
+    animate(alien, 0.5, {posy: GROUND}, 'bounce_end');
   }
 
   // If the alien is off the screen,

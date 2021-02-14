@@ -22,7 +22,7 @@ body {
 
 <body>
 <section id="imageLoader" class="hidden">
-  <img class="hidden" src="images/ship.png" alt="ship">
+  <img class="hidden" src="images/ship.png" alt="ship" data-name="ship">
 </section>
 
 <main>
@@ -155,10 +155,10 @@ WIDTH = 400;
 HEIGHT = 800;
 
 // How many wobbles the ship does while diving
-DIVE_WOBBLE_SPEED = 2;
+const DIVE_WOBBLE_SPEED = 2;
 
 // How far the ship wobbles while diving
-DIVE_WOBBLE_AMOUNT = 100;
+const DIVE_WOBBLE_AMOUNT = 100;
 
 /*
  * Get the ship's position at time t when diving.
@@ -167,18 +167,15 @@ DIVE_WOBBLE_AMOUNT = 100;
  * returns (0, 0)). Here we flip to the right before diving.
  */
 function dive_path(t) {
-  let result = [];
   if (t < 0.5) {
     // During the first 0.5s, do a half-loop to the right
-    result.push(50 * (1 - Math.cos(2 * t * Math.PI)),
-                -50 * (Math.sin(2 * t * Math.PI)));
-   }
-   else {
-     // For the rest of the time, follow a sinusoidal path downwards
-     t -= 0.5;
-     result.push(DIVE_WOBBLE_AMOUNT * Math.cos(t * DIVE_WOBBLE_SPEED), t * 350);
-   }
-   return result;
+    return [50 * (1 - Math.cos(2 * t * Math.PI)),
+            -50 * (Math.sin(2 * t * Math.PI))];
+  }
+
+  // For the rest of the time, follow a sinusoidal path downwards
+  t -= 0.5;
+  return [DIVE_WOBBLE_AMOUNT * Math.cos(t * DIVE_WOBBLE_SPEED), t * 350];
 }
 
 /*
@@ -188,15 +185,11 @@ function dive_path(t) {
  */
 function make_individual_dive(start_pos, flip_x = false) {
   let [sx=0, sy=0] = start_pos,
-      dir = 1;
-  if (flip_x) {
-    dir = -1;
-  }
+      dir = flip_x ? -1 : 1;
 
   function _dive_path(t) {
-    let [x=0, y=0] = dive_path(t),
-        result = [sx + (x * dir), sy + y];
-    return result;
+    let [x=0, y=0] = dive_path(t);
+    return [sx + (x * dir), sy + y];
   }
 
   return _dive_path;
@@ -206,7 +199,7 @@ function make_individual_dive(start_pos, flip_x = false) {
  * Update the ship when the ship is panning.
  */
 function ship_controller_pan(ship, dt) {
-  ship.x += ship.vx * dt;
+  ship.posx += ship.vx * dt;
   if (ship.right > (WIDTH - 50)) {
     ship.vx = -ship.vx;
     ship.right = WIDTH - 50;
@@ -238,7 +231,7 @@ function ship_controller_dive(ship, dt) {
   }
 }
 
-EPSILON = 0.001;
+const EPSILON = 0.001;
 
 var ship;
 
@@ -273,7 +266,7 @@ function update(dt) {
  */
 function start_dive() {
   // flip the dive if we're on the left of the screen
-  let flip_x = ship.x < Math.floor(WIDTH / 2);
+  let flip_x = ship.posx < Math.floor(WIDTH / 2);
   ship.controller_function = ship_controller_dive;
   ship.dive_path = make_individual_dive(ship.pos, flip_x);
   ship.t = 0;
