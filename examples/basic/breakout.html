@@ -330,10 +330,10 @@ function update_step(dt) {
       dx = (ball.centerx - brick.centerx) / BRICK_W;
       dy = (ball.centery - brick.centery) / BRICK_H;
       if (Math.abs(dx) > Math.abs(dy)) {
-        vx = (dx < 0) ? -Math.abs(vx): Math.abs(vx);
+        vx = (dx < 0) ? -Math.abs(vx) : Math.abs(vx);
       }
       else {
-        vy = (dy < 0) ? -Math.abs(vy): Math.abs(vy);
+        vy = (dy < 0) ? -Math.abs(vy) : Math.abs(vy);
       }
       bricks.splice(idx, 1);
     }

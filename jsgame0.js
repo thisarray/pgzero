@@ -701,7 +701,9 @@ const keyboard = (function () {
  * setInterval() so they can be synchronized with the core game loop.
  */
 const clock = (function () {
-  // Array of Arrays containing the scheduled callbacks
+  /*
+   * Array of Arrays containing the scheduled callbacks.
+   */
   let queue = [];
 
   return {
@@ -801,7 +803,7 @@ const images = (function () {
     // Uppercase method names to avoid clashing with lowercase names of resources
     LOAD(selector) {
       for (let e of Array.from(document.querySelectorAll(selector))) {
-        let name = e.getAttribute('alt');
+        let name = e.dataset.name.trim();
         this[name] = e;
       }
     }
@@ -813,8 +815,313 @@ const sounds = (function () {
     // Uppercase method names to avoid clashing with lowercase names of resources
     LOAD(selector) {
       for (let e of Array.from(document.querySelectorAll(selector))) {
-        let name = e.id;
+        let name = e.dataset.name.trim();
         this[name] = e;
+      }
+    }
+  }
+})();
+
+const music = (function () {
+  /*
+   * Map the string track name to its HTML element.
+   */
+  const TRACK_MAP = new Map();
+
+  let current = null,
+      hasMusicHook = false,
+      next = null,
+      paused = false,
+      stopped = true,
+      volume = 1;
+
+  /*
+   * JavaScript callback for when the end of the media is reached.
+   */
+  function deejay(event) {
+    if (hasMusicHook) {
+      window.on_music_end();
+    }
+    if ((current != null) && (!current.loop)) {
+      if (next != null) {
+        music._play(next, false);
+        next = null;
+      }
+    }
+  }
+
+  return {
+    LOAD(selector) {
+      for (let e of Array.from(document.querySelectorAll(selector))) {
+        let name = e.dataset.name.trim();
+        TRACK_MAP.set(name, e);
+        e.addEventListener('ended', deejay);
+      }
+      hasMusicHook = (typeof window.on_music_end === 'function');
+    },
+
+    _play(name, loop = false) {
+      if (!TRACK_MAP.has(name)) {
+        // If name is not recognized as a music track
+        return;
+      }
+      current = TRACK_MAP.get(name);
+      current.volume = volume;
+      current.loop = loop;
+      current.currentTime = 0;
+      current.play();
+      paused = false;
+      stopped = false;
+    },
+
+    /*
+     * Play the named music track. The track will loop indefinitely.
+     *
+     * This replaces the currently playing track and cancels any track
+     * previously queued with queue().
+     */
+    play(name) {
+      music.stop();
+      music._play(name, true);
+    },
+
+    /*
+     * Similar to play(), but the music will stop after playing through once.
+     */
+    play_once(name) {
+      music.stop();
+      music._play(name, false);
+    },
+
+    /*
+     * Similar to play_once(), but instead of stopping the current music, the
+     * track will be queued to play after the current track finishes.
+     *
+     * Only one track can be queued at a time. Queuing a new track while
+     * another track is queued will result in the new track becoming the
+     * queued track. Also, if the current track is ever stopped or changed,
+     * the queued track will be lost.
+     */
+    queue(name) {
+      if (TRACK_MAP.has(name)) {
+        next = name;
+      }
+    },
+
+    get_pos() {
+      if (current != null) {
+        return current.currentTime;
+      }
+      return 0;
+    },
+
+    set_pos(pos) {
+      if (typeof pos !== 'number') {
+        throw new TypeError('pos must be a number between 0 and the duration of the track.');
+      }
+      if (current != null) {
+        current.currentTime = Math.max(0, Math.min(pos, current.duration));
+      }
+    },
+
+    rewind() {
+      music.set_pos(0);
+    },
+
+    /*
+     * Stop the music.
+     */
+    stop() {
+      if (!stopped) {
+        next = null;
+        if (current != null) {
+          current.loop = false;
+          current.currentTime = current.duration;
+        }
+        paused = false;
+        stopped = true;
+      }
+    },
+
+    /*
+     * Pause the music temporarily. It can be resumed by calling unpause().
+     */
+    pause() {
+      if (!paused) {
+        if (current != null) {
+          current.pause();
+        }
+        paused = true;
+      }
+    },
+
+    /*
+     * Unpause the music.
+     */
+    unpause() {
+      if (paused) {
+        if (current != null) {
+          current.play();
+        }
+        paused = false;
+      }
+    },
+
+    /*
+     * Return true if the music is playing (and is not paused).
+     * False otherwise.
+     */
+    is_playing() {
+      return ((!paused) && (!stopped));
+    },
+
+    /*
+     * Does nothing. Only exists to match the interface.
+     */
+    fadeout() {
+    },
+
+    /*
+     * Get the current volume of the music system.
+     */
+    get_volume() {
+      return volume;
+    },
+
+    /*
+     * Set the volume of the music system.
+     *
+     * This takes a number between 0 (meaning silent) and 1 (meaning full volume).
+     */
+    set_volume(v) {
+      if (typeof v !== 'number') {
+        throw new TypeError('volume must be a number between 0 (meaning silent) and 1 (meaning full volume).');
+      }
+      volume = Math.max(0, Math.min(v, 1));
+      if (current != null) {
+        current.volume = volume;
+      }
+    }
+  }
+})();
+
+const tone = (function () {
+  /*
+   * Map the string note in lowercase to its frequency in hertz.
+   */
+  const NOTE_MAP = new Map();
+
+  const context = new (window.AudioContext || window.webkitAudioContext)();
+
+  /*
+   * Convert the hard-coded number of samples in Pygame Zero to durations.
+   *
+   * These constants refer to the stages of the Attack Decay Sustain Release (ADSR) envelope
+   * and not the poorly named DECAY constant.
+   */
+  const SAMPLE_RATE = 22050;
+  const ATTACK = 350 / SAMPLE_RATE;
+  const DECAY = 650 / SAMPLE_RATE;
+  const RELEASE = 2000 / SAMPLE_RATE;
+
+  /*
+   * Lazily build the map as needed.
+   */
+  function populateNotes() {
+    if (NOTE_MAP.size > 0) {
+      return;
+    }
+
+    // Frequency of A4 in hertz
+    const A4 = 440;
+    const TWELFTH_ROOT = Math.pow(2, 1 / 12);
+
+    for (let [note, value] of [
+      ['a', 0],
+      ['b', 2],
+      ['c', -9],
+      ['d', -7],
+      ['e', -5],
+      ['f', -4],
+      ['g', -2]]) {
+      for (let accidental of ['', 'b', '#']) {
+        for (let octave = 0; octave < 9; octave++) {
+          let key = note + accidental + octave,
+              frequency = value;
+          if (accidental === 'b') {
+            frequency += -1;
+          }
+          else if (accidental === '#') {
+            frequency += 1;
+          }
+          frequency += (4 - octave) * -12;
+          frequency = A4 * Math.pow(TWELFTH_ROOT, frequency);
+
+          NOTE_MAP.set(key, frequency);
+        }
+      }
+    }
+  }
+
+  return {
+    _getNoteMap() {
+      populateNotes();
+      return NOTE_MAP;
+    },
+
+    /*
+     * Play note for the given duration.
+     *
+     * note is a string and duration is a positive number in seconds.
+     */
+    play(note, duration) {
+      if (typeof note !== 'string') {
+        throw new TypeError('note must be a string. Notes are A-G, are either normal, flat (b) or sharp (#) and of octave 0-8.');
+      }
+      if (typeof duration !== 'number') {
+        throw new TypeError('duration must be a positive number.');
+      }
+      if (duration <= 0) {
+        throw new RangeError('duration must be a positive number.');
+      }
+
+      populateNotes();
+      let cleaned = note.trim().toLowerCase(),
+          envelope = [], gain, oscillator;
+      if (NOTE_MAP.has(cleaned)) {
+        // Create the Attack Decay Sustain Release (ADSR) envelope
+        if (duration < (ATTACK + DECAY)) {
+          // If duration is shorter than the Attack and Decay stages,
+          // then there is no Decay stage
+          envelope.push([1, duration * 0.1]);
+          envelope.push([0.9, duration]);
+          envelope.push([0, duration + RELEASE]);
+        }
+        else {
+          envelope.push([1, ATTACK]);
+          envelope.push([0.7, ATTACK + DECAY]);
+          envelope.push([0.7, duration]);
+          envelope.push([0, duration + RELEASE]);
+        }
+
+        gain = context.createGain();
+        gain.connect(context.destination);
+        gain.gain.setValueAtTime(0, context.currentTime);
+        for (let [value, offset] of envelope) {
+          // Pygame Zero linearly interpolates the samples so we do the same
+          gain.gain.linearRampToValueAtTime(value, context.currentTime + offset);
+        }
+
+        // Create the oscillator to generate the actual tone
+        oscillator = context.createOscillator();
+        oscillator.connect(gain);
+        oscillator.type = 'sine';
+        oscillator.frequency.value = NOTE_MAP.get(cleaned);
+        oscillator.start(context.currentTime);
+        oscillator.stop(context.currentTime + duration + RELEASE);
+      }
+      else {
+        throw new RangeError(`Unrecognized note "${ note }". Notes are A-G, are either normal, flat (b) or sharp (#) and of octave 0-8.`);
       }
     }
   }
@@ -1792,7 +2099,9 @@ class Inbetweener {
     return ((Inbetweener._out_bounce_internal(p - 1, 1) * 0.5) + 0.5);
   }
 
-  // Animation queue: Array of Inbetweener objects
+  /*
+   * Animation queue: Array of Inbetweener objects.
+   */
   static queue = [];
 
   /*
@@ -1980,10 +2289,10 @@ const screen = (function () {
     }
     else {
       let [r=0, g=0, b=0, a=MAX_COLOR] = color;
-      r = Math.max(Math.min(r, MAX_COLOR), 0);
-      g = Math.max(Math.min(g, MAX_COLOR), 0);
-      b = Math.max(Math.min(b, MAX_COLOR), 0);
-      a = Math.max(Math.min(a, MAX_COLOR), 0);
+      r = Math.max(0, Math.min(r, MAX_COLOR));
+      g = Math.max(0, Math.min(g, MAX_COLOR));
+      b = Math.max(0, Math.min(b, MAX_COLOR));
+      a = Math.max(0, Math.min(a, MAX_COLOR));
       if (a === MAX_COLOR) {
         return `rgb(${ r }, ${ g }, ${ b })`;
       }
@@ -2011,9 +2320,6 @@ const screen = (function () {
     return lines[longest];
   }
 
-  /*
-   * Private state variables
-   */
   let canvas = null,
       width = DEFAULT_WIDTH,
       height = DEFAULT_HEIGHT,
@@ -2331,7 +2637,7 @@ const screen = (function () {
         }
 
         if (('alpha' in config) && (typeof config['alpha'] === 'number')) {
-          context.globalAlpha = Math.max(Math.min(config['alpha'], 1), 0);
+          context.globalAlpha = Math.max(0, Math.min(config['alpha'], 1));
         }
         if ('color' in config) {
           color = parseColor(config['color']);
@@ -2449,7 +2755,7 @@ const screen = (function () {
         image = images[object.name];
         context.save();
         if (typeof object.opacity === 'number') {
-          context.globalAlpha = Math.max(Math.min(object.opacity, 1), 0);
+          context.globalAlpha = Math.max(0, Math.min(object.opacity, 1));
         }
         // Move the origin to the anchor so we can rotate
         context.translate(...object.pos);
@@ -2528,6 +2834,7 @@ const screen = (function () {
         reset.addEventListener('click', (event) => {
           clock._clearQueue();
           Inbetweener._clearQueue();
+          music.stop();
           if (typeof window.reset === 'function') {
             window.reset();
           }
@@ -2549,6 +2856,10 @@ const screen = (function () {
           }
         });
       }
+
+      // Pause the music here so when the user clicks on the canvas and
+      // screen.go() is called, the music starts playing
+      music.pause();
 
       screen.draw.playButton();
     },
@@ -2574,6 +2885,7 @@ const screen = (function () {
         }
       }
 
+      music.unpause();
       screen.clear();
 
       // Start the core game loop
@@ -2589,6 +2901,8 @@ const screen = (function () {
       // Stop the core game loop
       window.cancelAnimationFrame(running);
       running = 0;
+
+      music.pause();
 
       // Remove event listeners
       window.removeEventListener('keydown', keydown, true);
@@ -2882,18 +3196,18 @@ class Surface {
     this.imageData = imageData;
   }
 
-  /*
-   * Return the starting index of the pixel data for coordinates (x, y).
-   */
-  _coordinatesToIndex(x, y) {
-    return (x + (y * this.imageData.width)) * 4;
-  }
-
   get width() {
     return this.imageData.width;
   }
   get height() {
     return this.imageData.height;
+  }
+
+  /*
+   * Return the starting index of the pixel data for coordinates (x, y).
+   */
+  _coordinatesToIndex(x, y) {
+    return (x + (y * this.width)) * 4;
   }
 
   /*
@@ -2913,10 +3227,10 @@ class Surface {
     if (y < 0) {
       return [0, 0, 0, 0];
     }
-    if (this.imageData.width <= x) {
+    if (this.width <= x) {
       return [0, 0, 0, 0];
     }
-    if (this.imageData.height <= y) {
+    if (this.height <= y) {
       return [0, 0, 0, 0];
     }
 
@@ -2948,10 +3262,10 @@ class Surface {
     if (y < 0) {
       return;
     }
-    if (this.imageData.width <= x) {
+    if (this.width <= x) {
       return;
     }
-    if (this.imageData.height <= y) {
+    if (this.height <= y) {
       return;
     }
 
