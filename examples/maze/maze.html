@@ -22,8 +22,8 @@ body {
 
 <body>
 <section id="imageLoader" class="hidden">
-  <img class="hidden" src="images/pc.png" alt="pc">
-  <img class="hidden" src="images/target.png" alt="target">
+  <img class="hidden" src="images/pc.png" alt="pc" data-name="pc">
+  <img class="hidden" src="images/target.png" alt="target" data-name="target">
 </section>
 
 <main>
@@ -253,12 +253,12 @@ def reset():
 WIDTH = 801;
 HEIGHT = 601;
 
-LINE_COLOR = 'purple';
-CELL_SIZE = 20;
-CELLS_X = Math.floor(WIDTH / CELL_SIZE);
-CELLS_Y = Math.floor(HEIGHT / CELL_SIZE);
+const LINE_COLOR = 'purple';
+const CELL_SIZE = 20;
+const CELLS_X = Math.floor(WIDTH / CELL_SIZE);
+const CELLS_Y = Math.floor(HEIGHT / CELL_SIZE);
 
-TARGET = [CELLS_X - 1, CELLS_Y - 1];
+const TARGET = [CELLS_X - 1, CELLS_Y - 1];
 
 var lines, edges, pc, target;
 
@@ -385,19 +385,19 @@ function generate_maze() {
 
   // Generate the lines
   lines = [];
-  for (let p of cells()) {
-    let r = cell_to_rect(p),
-        [x=0, y=0] = p;
+  for (let pos of cells()) {
+    let r = cell_to_rect(pos),
+        [x=0, y=0] = pos;
     if (x === 0) {
       lines.push([r.topleft, r.bottomleft]);
     }
     if (y === 0) {
       lines.push([r.topleft, r.topright]);
     }
-    if (!edges.has(`${ p.join('x') }to${ x + 1 }x${ y }`)) {
+    if (!edges.has(`${ pos.join('x') }to${ x + 1 }x${ y }`)) {
       lines.push([r.topright, r.bottomright]);
     }
-    if (!edges.has(`${ p.join('x') }to${ x }x${ y + 1 }`)) {
+    if (!edges.has(`${ pos.join('x') }to${ x }x${ y + 1 }`)) {
       lines.push([r.bottomleft, r.bottomright]);
     }
   }
@@ -451,7 +451,14 @@ function on_key_down(key) {
       pc.grid_pos = dest;
       if ((dest[0] === TARGET[0]) && (dest[1] === TARGET[1])) {
         clock.schedule_unique(reset, 0.3);
+        tone.play('A4', 0.3);
       }
+      else {
+        tone.play('E3', 0.05);
+      }
+    }
+    else {
+      tone.play('Ab3', 0.2);
     }
   }
 }

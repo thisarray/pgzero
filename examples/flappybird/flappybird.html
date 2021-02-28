@@ -22,13 +22,13 @@ body {
 
 <body>
 <section id="imageLoader" class="hidden">
-  <img class="hidden" src="images/background.png" alt="background">
-  <img class="hidden" src="images/bird0.png" alt="bird0">
-  <img class="hidden" src="images/bird1.png" alt="bird1">
-  <img class="hidden" src="images/bird2.png" alt="bird2">
-  <img class="hidden" src="images/birddead.png" alt="birddead">
-  <img class="hidden" src="images/bottom.png" alt="bottom">
-  <img class="hidden" src="images/top.png" alt="top">
+  <img class="hidden" src="images/background.png" alt="background" data-name="background">
+  <img class="hidden" src="images/bird0.png" alt="bird0" data-name="bird0">
+  <img class="hidden" src="images/bird1.png" alt="bird1" data-name="bird1">
+  <img class="hidden" src="images/bird2.png" alt="bird2" data-name="bird2">
+  <img class="hidden" src="images/birddead.png" alt="birddead" data-name="birddead">
+  <img class="hidden" src="images/bottom.png" alt="bottom" data-name="bottom">
+  <img class="hidden" src="images/top.png" alt="top" data-name="top">
 </section>
 
 <main>
@@ -154,10 +154,10 @@ WIDTH = 400;
 HEIGHT = 708;
 
 // These constants control the difficulty of the game
-GAP = 130;
-GRAVITY = 0.3;
-FLAP_STRENGTH = 6.5;
-SPEED = 3;
+const GAP = 130;
+const GRAVITY = 0.3;
+const FLAP_STRENGTH = 6.5;
+const SPEED = 3;
 
 var bird, pipe_top, pipe_bottom;
 
@@ -178,7 +178,7 @@ function reset_pipes() {
 
 function reset() {
   bird = new Actor('bird1');
-  bird.center = [75, 200];
+  bird.pos = [75, 200];
   bird.dead = false;
   bird.score = 0;
   bird.vy = 0;
@@ -211,8 +211,8 @@ function update_pipes() {
 function update_bird() {
   let uy = bird.vy;
   bird.vy += GRAVITY;
-  bird.y += Math.floor((uy + bird.vy) / 2);
-  bird.x = 75;
+  bird.posy += Math.floor((uy + bird.vy) / 2);
+  bird.posx = 75;
 
   if (!bird.dead) {
     if (bird.vy < -3) {
@@ -228,8 +228,8 @@ function update_bird() {
     bird.name = 'birddead';
   }
 
-  if ((bird.y <= 0) || (720 <= bird.y)) {
-    bird.y = 200;
+  if ((bird.posy <= 0) || (720 <= bird.posy)) {
+    bird.posy = 200;
     bird.dead = false;
     bird.score = 0;
     bird.vy = 0;

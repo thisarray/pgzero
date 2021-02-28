@@ -22,15 +22,15 @@ body {
 
 <body>
 <section id="imageLoader" class="hidden">
-  <img class="hidden" src="images/card_back.png" alt="card_back">
-  <img class="hidden" src="images/checkmark.bmp" alt="checkmark">
-  <img class="hidden" src="images/im1.bmp" alt="im1">
-  <img class="hidden" src="images/im2.bmp" alt="im2">
-  <img class="hidden" src="images/im3.bmp" alt="im3">
-  <img class="hidden" src="images/im4.bmp" alt="im4">
-  <img class="hidden" src="images/im5.bmp" alt="im5">
-  <img class="hidden" src="images/im6.bmp" alt="im6">
-  <img class="hidden" src="images/steve.bmp" alt="steve">
+  <img class="hidden" src="images/card_back.png" alt="card_back" data-name="card_back">
+  <img class="hidden" src="images/checkmark.bmp" alt="checkmark" data-name="checkmark">
+  <img class="hidden" src="images/im1.bmp" alt="im1" data-name="im1">
+  <img class="hidden" src="images/im2.bmp" alt="im2" data-name="im2">
+  <img class="hidden" src="images/im3.bmp" alt="im3" data-name="im3">
+  <img class="hidden" src="images/im4.bmp" alt="im4" data-name="im4">
+  <img class="hidden" src="images/im5.bmp" alt="im5" data-name="im5">
+  <img class="hidden" src="images/im6.bmp" alt="im6" data-name="im6">
+  <img class="hidden" src="images/steve.bmp" alt="steve" data-name="steve">
 </section>
 
 <main>
@@ -147,9 +147,9 @@ def next_turn():
  *       Configure window size according to COLS and ROWS
  */
 
-COLS = 4;
-ROWS = 3;
-IMSIZE = 200;
+const COLS = 4;
+const ROWS = 3;
+const IMSIZE = 200;
 
 var checkmark, steve, clickBuffer, ignore, start_images, board;
 
@@ -166,10 +166,11 @@ function getRandomInteger(min, max) {
  * Shuffle Array x in place.
  */
 function shuffle(x) {
+  let j, temp;
   for (let i = x.length - 1; i > 0; i--) {
     // pick an element in x[:i+1] with which to exchange x[i]
-    let j = getRandomInteger(0, i + 1),
-        temp = x[i];
+    j = getRandomInteger(0, i + 1);
+    temp = x[i];
     x[i] = x[j];
     x[j] = temp;
   }
@@ -222,15 +223,14 @@ function draw() {                    // draw the board when pygame-zero says to
   }
 }
 
-/*
- * The original Python code incorrectly unpacked pos.
- * There is a general confusion with the row major of the board
- * where y is the first index (row) and x is the second index (column).
- */
 function findTile(pos) {
-  let [x=0, y=0] = pos,
-      result = [Math.floor(y / IMSIZE), Math.floor(x / IMSIZE)];
-  return result;
+  /*
+   * The original Python code incorrectly unpacked pos.
+   * There is a general confusion with the row major of the board
+   * where y is the first index (row) and x is the second index (column).
+   */
+  let [x=0, y=0] = pos;
+  return [Math.floor(y / IMSIZE), Math.floor(x / IMSIZE)];
 }
 
 function on_mouse_down(pos, button) {
