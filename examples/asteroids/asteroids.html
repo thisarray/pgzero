@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asteroids</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/asteroid1_1.png" alt="asteroid1_1" data-name="asteroid1_1">
+  <img class="hidden" src="images/asteroid1_2.png" alt="asteroid1_2" data-name="asteroid1_2">
+  <img class="hidden" src="images/asteroid1_3.png" alt="asteroid1_3" data-name="asteroid1_3">
+  <img class="hidden" src="images/asteroid2_1.png" alt="asteroid2_1" data-name="asteroid2_1">
+  <img class="hidden" src="images/asteroid2_2.png" alt="asteroid2_2" data-name="asteroid2_2">
+  <img class="hidden" src="images/asteroid2_3.png" alt="asteroid2_3" data-name="asteroid2_3">
+  <img class="hidden" src="images/asteroid3_1.png" alt="asteroid3_1" data-name="asteroid3_1">
+  <img class="hidden" src="images/asteroid3_2.png" alt="asteroid3_2" data-name="asteroid3_2">
+  <img class="hidden" src="images/asteroid3_3.png" alt="asteroid3_3" data-name="asteroid3_3">
+  <img class="hidden" src="images/bullet.png" alt="bullet" data-name="bullet">
+  <img class="hidden" src="images/player.png" alt="player" data-name="player">
+</section>
+<section id="soundLoader" class="hidden">
+  <audio class="hidden" controls preload="auto" src="sounds/asteroid_explosion.wav" data-name="asteroid_explosion">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/fire.wav" data-name="fire">Your browser does not support the audio element.</audio>
+  <audio class="hidden" controls preload="auto" src="sounds/player_explosion.wav" data-name="player_explosion">Your browser does not support the audio element.</audio>
+</section>
+
+<main>
+<h1>asteroids</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+from enum import Enum
+import json
+import operator
+
+from pygame.math import Vector2
+
+from space import create_star_scape
+from actors import Player, Asteroid
+
+ICON = &#x27;player&#x27;
+WIDTH = 800
+HEIGHT = 600
+
+
+class GameStage(Enum):
+    start = 0
+    game = 1
+    level_complete = 2
+    game_over = 3
+    leader_board = 4
+
+
+class GameState():
+    stage = GameStage.start
+    bullets = []
+    asteroids = []
+    initials = &#x27;&#x27;
+    level = 1
+    score = 0
+    lives = 3
+    player = None
+    leader_board = {}
+
+
+game = GameState()
+game.player = Player(pos=(WIDTH / 2, HEIGHT / 2))
+stars = create_star_scape(WIDTH, HEIGHT)
+max_distance = min(WIDTH, HEIGHT) * .95
+
+life_pos = 10
+life_icons = []
+for _ in range(3):
+    icon = Actor(&#x27;player&#x27;, topleft=(life_pos, 10))
+    life_pos += 32
+    life_icons.append(icon)
+
+
+def create_asteroids():
+    game.asteroids = []
+    for i in range(2 + game.level):
+        game.asteroids.append(Asteroid((WIDTH, HEIGHT)))
+
+
+def make_vulnerable():
+    game.player.invulnerable = False
+    clock.unschedule(blink)
+    game.player.show = True
+
+
+def make_invulnerable():
+    game.player.invulnerable = True
+    clock.schedule_unique(make_vulnerable, 3.0)
+    game.player.show = True
+    clock.schedule_interval(blink, 0.2)
+
+
+def update(dt):
+    for asteroid in game.asteroids:
+        asteroid.move(dt)
+
+    for bullet in game.bullets:
+        bullet.exact_pos = bullet.exact_pos - (bullet.velocity * dt)
+        c = bullet.collidelist(game.asteroids)
+        if c &gt; -1:
+            sounds.asteroid_explosion.play()
+            game.bullets.remove(bullet)
+            asteroid = game.asteroids.pop(c)
+            game.score += 120.0 / asteroid.mass
+            chunks = asteroid.destroy()
+            game.asteroids.extend(chunks)
+            if len(game.asteroids) == 0:
+                game.stage = GameStage.level_complete
+                clock.schedule(next_level, 3.0)
+                return
+            continue
+        if bullet.exact_pos.distance_to(bullet.start_pos) &gt; max_distance:
+            game.bullets.remove(bullet)
+        bullet.pos = bullet.exact_pos.x % WIDTH, bullet.exact_pos.y % HEIGHT
+
+    if game.stage is GameStage.game:
+        if not game.player.frozen:
+            game.player.move(dt, (WIDTH, HEIGHT))
+
+        if game.lives and not game.player.invulnerable and game.player.collidelist(game.asteroids) &gt; -1:
+            sounds.player_explosion.play()
+            game.lives -= 1
+            game.player.destroy((WIDTH / 2, HEIGHT / 2))
+            game.player.show = False
+            game.player.invulnerable = True
+            game.player.frozen = True
+            clock.schedule_unique(respawn, 2.0)
+
+        if not game.lives:
+            game.player.frozen = True
+            game.stage = GameStage.game_over
+
+    if game.stage is GameStage.leader_board and not game.leader_board:
+        leader_board = storage.setdefault(&quot;leader_board&quot;, [])
+        max_leaders = {}
+        for initial, score in leader_board:
+            max_leaders[initial] = max(score, max_leaders.get(initial, 0))
+        game.leader_board[&#x27;max_leaders&#x27;] = sorted(max_leaders.items(), key=operator.itemgetter(1), reverse=True)[:15]
+        game.leader_board[&#x27;leader_board&#x27;] = sorted(leader_board, key=operator.itemgetter(1), reverse=True)[:15]
+
+
+def respawn():
+    game.player.show = True
+    game.player.frozen = False
+    make_invulnerable()
+
+
+def next_level():
+    game.level += 1
+    start_game(restart_game=False)
+
+
+def blink():
+    game.player.show = not game.player.show
+
+
+def on_key_down(key):
+    if game.stage is GameStage.start:
+        if key == keys.SPACE:
+            start_game()
+    elif game.stage is GameStage.game:
+        if key == keys.UP:
+            game.player.thrust = True
+        if key == keys.LEFT:
+            game.player.turn += 1
+        if key == keys.RIGHT:
+            game.player.turn -= 1
+        if key == keys.SPACE and not game.player.frozen:
+            sounds.fire.play()
+            game.bullets.append(game.player.fire())
+    elif game.stage is GameStage.game_over:
+        if key == keys.BACKSPACE:
+            game.initials = game.initials[:-1]
+        elif key == keys.RETURN and game.initials:
+            leader_board = storage.setdefault(&quot;leader_board&quot;, [])
+            leader_board.append((game.initials, game.score))
+            game.leader_board = {}
+            game.stage = GameStage.leader_board
+        elif len(game.initials) &lt; 3 and keys.A &lt;= key &lt;= keys.Z:
+            game.initials += chr(key).upper()
+    elif game.stage is GameStage.leader_board:
+        if key == keys.SPACE:
+            game.stage = GameStage.start
+
+
+def on_key_up(key):
+    if game.stage is GameStage.game:
+        if key == keys.UP:
+            game.player.thrust = False
+        if key == keys.LEFT:
+            game.player.turn -= 1
+        if key == keys.RIGHT:
+            game.player.turn += 1
+
+
+def start_game(restart_game=True):
+    if restart_game:
+        game.level = 1
+        game.score = 0
+        game.initials = &#x27;&#x27;
+    create_asteroids()
+    game.lives = 3
+    game.player.thrust = False
+    game.player.turn = 0
+    game.player.angle = 0.0
+    game.player.velocity = Vector2(0, 0)
+    game.player.pos = (WIDTH / 2, HEIGHT / 2)
+    game.player.exact_pos = Vector2(game.player.center)
+    game.stage = GameStage.game
+    make_invulnerable()
+
+
+def draw():
+    screen.clear()
+    screen.blit(stars, (0, 0))
+    if game.stage is GameStage.start:
+        screen.draw.text(&#x27;Press SPACE to start&#x27;, center=(WIDTH / 2, HEIGHT / 2), color=&#x27;white&#x27;)
+    elif game.stage is GameStage.game:
+        if game.player.show:
+            game.player.draw()
+        for i in range(game.lives):
+            life_icons[i].draw()
+        screen.draw.text(str(round(game.score)), midtop=(WIDTH / 2, 10))
+    elif game.stage is GameStage.level_complete:
+        screen.draw.text(&#x27;LEVEL %s COMPLETE!&#x27; % game.level, midbottom=(WIDTH / 2, HEIGHT / 2), fontsize=60)
+        screen.draw.text(str(round(game.score)), midtop=(WIDTH / 2, 10))
+        screen.draw.text(&#x27;Next level in 3.. 2.. 1..&#x27;, midtop=(WIDTH / 2, HEIGHT / 2))
+    elif game.stage is GameStage.game_over:
+        screen.draw.text(&#x27;GAME OVER!&#x27;, midbottom=(WIDTH / 2, HEIGHT / 2), fontsize=60)
+        screen.draw.text(str(round(game.score)), midtop=(WIDTH / 2, 10))
+        screen.draw.text(&#x27;Enter Initials:&#x27;, midtop=(WIDTH / 2, HEIGHT / 2))
+        screen.draw.text(game.initials, midtop=(WIDTH / 2, (HEIGHT / 2) + 24))
+    elif game.stage is GameStage.leader_board:
+        top = 60
+        screen.draw.text(&#x27;High Scores&#x27;, midtop=(WIDTH / 2, top), fontsize=40)
+        if game.leader_board:
+            top += 40
+            max_top = top
+            for initial, score in game.leader_board[&#x27;leader_board&#x27;]:
+                screen.draw.text(&#x27;%s %s&#x27; % (initial, round(score)), midtop=((WIDTH / 2) - 60, top))
+                top += 24
+
+            for initial, score in game.leader_board[&#x27;max_leaders&#x27;]:
+                screen.draw.text(&#x27;%s %s&#x27; % (initial, round(score)), midtop=((WIDTH / 2) + 60, max_top))
+                max_top += 24
+
+        screen.draw.text(&#x27;Press SPACE to restart&#x27;, midtop=(WIDTH / 2, top + 40))
+
+    for bullet in game.bullets:
+        bullet.draw()
+    for asteroid in game.asteroids:
+        asteroid.draw()
+</code></pre>
+</main>
+
+<script>
+WIDTH = 800;
+HEIGHT = 600;
+const MAX_DISTANCE = Math.min(WIDTH, HEIGHT) * 0.95;
+
+/*
+ * Return a random number N such that min <= N < max.
+ */
+function getRandom(min, max) {
+  return (Math.random() * (max - min)) + min;
+}
+
+/*
+ * Return a random integer N such that min <= N < max.
+ */
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+/*
+ * A JavaScript 2-Dimensional vector based on pygame.math.Vector2.
+ */
+class Vecta {
+  /*
+   * Return true if the Numbers first and second are equal to places.
+   *
+   * This is necessary because JavaScript Number is a floating point value and is not exact.
+   */
+  static isAlmostEqual(first, second, places = 7) {
+    if (typeof first !== 'number') {
+      return false;
+    }
+    if (typeof second !== 'number') {
+      return false;
+    }
+    return (first.toFixed(places) === second.toFixed(places));
+  }
+
+  constructor() {
+    let x, y;
+    if (arguments.length === 1) {
+      if (typeof arguments[0] === 'number') {
+        x = arguments[0];
+        y = arguments[0];
+      }
+      else if (typeof arguments[0] === 'object') {
+        if (Array.isArray(arguments[0])) {
+          [x=0, y=0] = arguments[0];
+        }
+        else {
+          ({x=0, y=0} = arguments[0]);
+        }
+      }
+      else {
+        throw new Error('Not enough arguments.');
+      }
+    }
+    else {
+      [x=0, y=0] = arguments;
+    }
+
+    this.x = x;
+    this.y = y;
+  }
+
+  /*
+   * Return a new Vecta instance resulting from adding the other vector to this vector.
+   */
+  add() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+    return new Vecta(this.x + v.x, this.y + v.y);
+  }
+
+  /*
+   * Return a new Vecta instance resulting from subtracting the other vector from this vector.
+   */
+  subtract() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+    return new Vecta(this.x - v.x, this.y - v.y);
+  }
+
+  /*
+   * Return a new Vecta instance resulting from multiplying this vector by a Number.
+   */
+  multiply() {
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (typeof arguments[0] === 'number') {
+      return new Vecta(this.x * arguments[0], this.y * arguments[0]);
+    }
+    return this.dot(...arguments);
+  }
+
+  /*
+   * Return a new Vecta instance resulting from dividing this vector by a Number.
+   */
+  divide(divisor) {
+    if (typeof divisor !== 'number') {
+      throw new TypeError('divisor must be a Number.');
+    }
+    return new Vecta(this.x / divisor, this.y / divisor);
+  }
+
+  /*
+   * Return true if this vector is equal to the other vector.
+   */
+  isEqual() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+    return (Vecta.isAlmostEqual(this.x, v.x) && Vecta.isAlmostEqual(this.y, v.y));
+  }
+
+  /*
+   * Return a new Vecta instance resulting from rotating this vector by the given angle in degrees.
+   */
+  rotate(degrees) {
+    return this.rotate_rad(degrees * Math.PI / 180);
+  }
+
+  /*
+   * Return a new Vecta instance resulting from rotating this vector by the given angle in radians.
+   */
+  rotate_rad(radians) {
+    let v = new Vecta(this.x, this.y);
+    v.rotate_ip_rad(radians);
+    return v;
+  }
+
+  /*
+   * Rotate this vector by the given angle in degrees.
+   */
+  rotate_ip(degrees) {
+    this.rotate_ip_rad(degrees * Math.PI / 180);
+  }
+
+  /*
+   * Rotate this vector by the given angle in radians.
+   */
+  rotate_ip_rad(radians) {
+    radians = radians % (Math.PI * 2);
+    if (radians < 0) {
+      radians += Math.PI * 2;
+    }
+    if (Vecta.isAlmostEqual(radians, 0)) {
+      return;
+    }
+    let sin = Math.sin(radians),
+        cos = Math.cos(radians),
+        newX = (cos * this.x) - (sin * this.y),
+        newY = (sin * this.x) + (cos * this.y);
+    if (Vecta.isAlmostEqual(radians, Math.PI / 2)) {
+      newX = -this.y;
+      newY = this.x;
+    }
+    else if (Vecta.isAlmostEqual(radians, Math.PI)) {
+      newX = -this.x;
+      newY = -this.y;
+    }
+    else if (Vecta.isAlmostEqual(radians, 3 * Math.PI / 2)) {
+      newX = this.y;
+      newY = -this.x;
+    }
+
+    this.x = newX;
+    this.y = newY;
+  }
+
+  /*
+   * Return a new Vecta instance with the same direction but length 1.
+   */
+  normalize() {
+    let v = new Vecta(this.x, this.y);
+    v.normalize_ip();
+    return v;
+  }
+
+  /*
+   * Scale this vector to have length 1.
+   */
+  normalize_ip() {
+    let length = this.length();
+    if (length <= 0) {
+      throw new RangeError('Cannot normalize Vector of length 0.');
+    }
+    this.x /= length;
+    this.y /= length;
+  }
+
+  /*
+   * Return true if this vector has length 1.
+   */
+  is_normalized() {
+    return Vecta.isAlmostEqual(this.length_squared(), 1);
+  }
+
+  /*
+   * Return the cross product of this vector and the other vector.
+   */
+  cross() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+    return ((this.x * v.y) - (this.y * v.x));
+  }
+
+  /*
+   * Return the dot product of this vector and the other vector.
+   */
+  dot() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+    return ((this.x * v.x) + (this.y * v.y));
+  }
+
+  /*
+   * Return the angle to the given vector in degrees.
+   */
+  angle_to() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+    return ((Math.atan2(v.y, v.x) - Math.atan2(this.y, this.x)) * 180 / Math.PI);
+  }
+
+  /*
+   * Scale this vector to the given length.
+   */
+  scale_to_length(newLength) {
+    let length = this.length(),
+        fraction;
+    if (length <= 0) {
+      throw new RangeError('Cannot scale Vector of length 0.');
+    }
+    fraction = newLength / length;
+    this.x *= fraction;
+    this.y *= fraction;
+  }
+
+  /*
+   * Return the Euclidean length/magnitude of this vector.
+   */
+  length() {
+    return Math.hypot(this.x, this.y);
+  }
+
+  /*
+   * Return the squared Euclidean length/magnitude of this vector.
+   */
+  length_squared() {
+    return ((this.x * this.x) + (this.y * this.y));
+  }
+
+  /*
+   * Return a new Vecta instance of this vector reflected of the given normal.
+   */
+  reflect() {
+    let n;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      n = arguments[0];
+    }
+    else {
+      n = new Vecta(...arguments);
+    }
+
+    let v = new Vecta(this.x, this.y);
+    v.reflect_ip(n);
+    return v;
+  }
+
+  /*
+   * Reflect this vector of the given normal.
+   */
+  reflect_ip() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+
+    if (Vecta.isAlmostEqual(v.length_squared(), 0)) {
+      throw new RangeError('Normal must not be of length 0.');
+    }
+
+    let n = v.normalize(),
+        dot_product = this.dot(n);
+    this.x -= 2 * n.x * dot_product;
+    this.y -= 2 * n.y * dot_product;
+  }
+
+  /*
+   * Return the Euclidean distance to the given vector.
+   */
+  distance_to() {
+    return Math.sqrt(this.distance_squared_to(...arguments));
+  }
+
+  /*
+   * Return the squared Euclidean distance to the given vector.
+   */
+  distance_squared_to() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+    return (((v.x - this.x) * (v.x - this.x)) + ((v.y - this.y) * (v.y - this.y)));
+  }
+
+  /*
+   * Set the coordinates of this vector to the new values.
+   */
+  update() {
+    let v;
+    if (arguments.length <= 0) {
+      throw new Error('Not enough arguments.');
+    }
+    if (arguments[0] instanceof Vecta) {
+      v = arguments[0];
+    }
+    else {
+      v = new Vecta(...arguments);
+    }
+    this.x = v.x;
+    this.y = v.y;
+  }
+}
+Vecta.prototype.toString = function () {
+  return `[${ this.x }, ${ this.y }]`;
+}
+
+class Player extends Actor {
+  constructor(x, y) {
+    super('player');
+    this.pos = [x, y];
+    this.invulnerable = true;
+    this.show = true;
+    this.thrust = false;
+    this.turn = 0;
+    this.speed = 0.2;
+    this.velocity = new Vecta();
+    this.exact_pos = new Vecta(this.center);
+    this.frozen = false;
+  }
+
+  fire() {
+    let bullet = new Actor('bullet'),
+        angle = this.angle * Math.PI / 180;
+    bullet.pos = this.pos;
+    bullet.start_pos = new Vecta(this.pos);
+    bullet.exact_pos = new Vecta(this.pos);
+    bullet.velocity = (new Vecta(Math.sin(angle), Math.cos(angle))).normalize().multiply(1000);
+    return bullet;
+  }
+
+  move(dt, boundX, boundY) {
+    if (this.turn !== 0) {
+      this.angle += this.turn * dt * 270;
+    }
+    if (this.thrust) {
+      let angle = this.angle * Math.PI / 180;
+      this.velocity = this.velocity.add([Math.sin(angle) * this.speed, Math.cos(angle) * this.speed]);
+    }
+    else {
+      this.velocity = this.velocity.multiply(0.99);
+    }
+    this.exact_pos = this.exact_pos.subtract(this.velocity);
+    /*
+     * JavaScript % always takes the sign of the dividend
+     * so we add the divisor to ensure the dividend is positive.
+     */
+    while (this.exact_pos.x < 0) {
+      this.exact_pos.x += boundX;
+    }
+    this.exact_pos.x = this.exact_pos.x % boundX;
+    while (this.exact_pos.y < 0) {
+      this.exact_pos.y += boundY;
+    }
+    this.exact_pos.y = this.exact_pos.y % boundY;
+    this.pos = [this.exact_pos.x, this.exact_pos.y];
+  }
+
+  destroy(x, y) {
+    this.pos = [x, y];
+    this.angle = 0;
+    this.velocity = new Vecta();
+    this.invulnerable = true;
+    this.thrust = false;
+    this.exact_pos = new Vecta(this.pos);
+  }
+
+  collidelist(asteroids) {
+    let i = 0;
+    for (let a of asteroids) {
+      if (this.colliderect(a)) {
+        return i;
+      }
+      i++;
+    }
+    return -1;
+  }
+}
+
+class Asteroid extends Actor {
+  constructor(boundX, boundY, mass = 3) {
+    super(`asteroid${ getRandomInteger(1, 4) }_${ mass }`);
+    this.pos = [getRandomInteger(0, boundX + 1), getRandomInteger(0, boundY + 1)];
+    this.boundX = boundX;
+    this.boundY = boundY;
+    this.mass = mass;
+    this.velocity = (new Vecta(getRandom(-1, 1), getRandom(-1, 1))).normalize().multiply(50);
+    this.exact_pos = new Vecta(this.pos);
+  }
+
+  move(dt) {
+    this.exact_pos = this.exact_pos.subtract(this.velocity.multiply(dt));
+    /*
+     * JavaScript % always takes the sign of the dividend
+     * so we add the divisor to ensure the dividend is positive.
+     */
+    while (this.exact_pos.x < 0) {
+      this.exact_pos.x += this.boundX;
+    }
+    this.exact_pos.x = this.exact_pos.x % this.boundX;
+    while (this.exact_pos.y < 0) {
+      this.exact_pos.y += this.boundY;
+    }
+    this.exact_pos.y = this.exact_pos.y % this.boundY;
+    this.pos = [this.exact_pos.x, this.exact_pos.y];
+  }
+
+  destroy() {
+    let debris = [];
+    if (this.mass > 1) {
+      for (let i = 0; i < 3; i++) {
+        debris.push(this.chunk());
+      }
+    }
+    return debris;
+  }
+
+  chunk() {
+    let chunk = new Asteroid(this.boundX, this.boundY, this.mass - 1);
+    chunk.pos = this.pos;
+    chunk.velocity = this.velocity.rotate(getRandom(180, 360)).multiply(2);
+    chunk.exact_pos = new Vecta(chunk.pos);
+    return chunk;
+  }
+}
+
+function create_star_scape(width, height) {
+  screen.clear();
+  let limit = getRandomInteger(250, 351);
+  for (let i = 0; i < limit; i++) {
+    let color = getRandomInteger(100, 256),
+        alpha = getRandomInteger(0, 51),
+        x = getRandomInteger(0, width + 1),
+        y = getRandomInteger(0, height + 1);
+    screen.draw.filled_rect(new Rect(x - 1, y - 1, 3, 3), [color, color, color, alpha]);
+    screen.draw.filled_rect(new Rect(x, y, 1, 1), [color, color, color]);
+  }
+  return screen.getSurface(width, height);
+}
+
+const GameStage = Object.freeze({
+  start: 0,
+  game: 1,
+  level_complete: 2,
+  game_over: 3,
+  leader_board: 4
+});
+
+class GameState {
+  constructor() {
+    this.stage = GameStage.start;
+    this.bullets = [];
+    this.asteroids = [];
+    this.initials = '';
+    this.level = 1;
+    this.score = 0;
+    this.lives = 3;
+    this.player = null;
+    this.leader_board = new Map();
+  }
+}
+
+var game, stars, life_icons;
+
+function reset() {
+  game = new GameState();
+  game.player = new Player(WIDTH / 2, HEIGHT / 2);
+  stars = create_star_scape(WIDTH, HEIGHT);
+
+  life_icons = [];
+  let life_pos = 10;
+  for (let i = 0; i < game.lives; i++) {
+    let icon = new Actor('player');
+    icon.topleft = [life_pos, 10];
+    life_pos += 32;
+    life_icons.push(icon);
+  }
+}
+
+function create_asteroids() {
+  game.asteroids = [];
+  for (let i = 0; i < (2 + game.level); i++) {
+    game.asteroids.push(new Asteroid(WIDTH, HEIGHT));
+  }
+}
+
+function make_vulnerable() {
+  game.player.invulnerable = false;
+  clock.unschedule(blink);
+  game.player.show = true;
+}
+
+function make_invulnerable() {
+  game.player.invulnerable = true;
+  clock.schedule_unique(make_vulnerable, 3.0);
+  game.player.show = true;
+  clock.schedule_interval(blink, 0.2);
+}
+
+function update(dt) {
+  for (let asteroid of game.asteroids) {
+    asteroid.move(dt);
+  }
+
+  let bulletsToRemove = [],
+      i = -1,
+      j, c, asteroid, x, y;
+  for (let bullet of game.bullets) {
+    i++;
+    bullet.exact_pos = bullet.exact_pos.subtract(bullet.velocity.multiply(dt));
+
+    /*
+     * Workaround not having the collidelist() method in Actor.
+     */
+    c = -1;
+    j = 0;
+    for (let a of game.asteroids) {
+      if (bullet.colliderect(a)) {
+        c = j;
+        break;
+      }
+      j++;
+    }
+
+    if (c > -1) {
+      sounds.asteroid_explosion.play();
+      bulletsToRemove.push(i);
+      asteroid = game.asteroids.splice(c, 1)[0];
+      game.score += 120.0 / asteroid.mass;
+      game.asteroids.push(...asteroid.destroy());
+      if (game.asteroids.length === 0) {
+        game.stage = GameStage.level_complete;
+        clock.schedule(next_level, 3.0);
+        return;
+      }
+      continue;
+    }
+    if (bullet.exact_pos.distance_to(bullet.start_pos) > MAX_DISTANCE) {
+      bulletsToRemove.push(i);
+    }
+    /*
+     * JavaScript % always takes the sign of the dividend
+     * so we add the divisor to ensure the dividend is positive.
+     */
+    x = bullet.exact_pos.x;
+    y = bullet.exact_pos.y;
+    while (x < 0) {
+      x += WIDTH;
+    }
+    while (y < 0) {
+      y += HEIGHT;
+    }
+    bullet.pos = [x % WIDTH, y % HEIGHT];
+  }
+  while (bulletsToRemove.length > 0) {
+    game.bullets.splice(bulletsToRemove.pop(), 1);
+  }
+
+  if (game.stage === GameStage.game) {
+    if (!game.player.frozen) {
+      game.player.move(dt, WIDTH, HEIGHT);
+    }
+
+    if ((game.lives > 0) && (!game.player.invulnerable) && (game.player.collidelist(game.asteroids) > -1)) {
+      sounds.player_explosion.play();
+      game.lives -= 1;
+      game.player.destroy(WIDTH / 2, HEIGHT / 2);
+      game.player.show = false;
+      game.player.invulnerable = true;
+      game.player.frozen = true;
+      clock.schedule_unique(respawn, 2.0);
+    }
+
+    if (game.lives === 0) {
+      game.player.frozen = true;
+      game.stage = GameStage.game_over;
+    }
+  }
+
+  if ((game.stage === GameStage.leader_board) && (game.leader_board.size > 0)) {
+    /*
+     * The original Python code only sets the default to [] on storage
+     * which returns an empty list.
+     */
+    game.leader_board.set('max_leaders', []);
+    game.leader_board.set('leader_board', []);
+  }
+}
+
+function respawn() {
+  game.player.show = true;
+  game.player.frozen = false;
+  make_invulnerable();
+}
+
+function next_level() {
+  game.level += 1;
+  start_game(false);
+}
+
+function blink() {
+  game.player.show = !game.player.show;
+}
+
+function on_key_down(key) {
+  if (game.stage === GameStage.start) {
+    if (key === keys.SPACE) {
+      start_game();
+    }
+  }
+  else if (game.stage === GameStage.game) {
+    if (key === keys.UP) {
+      game.player.thrust = true;
+    }
+    if (key === keys.LEFT) {
+      game.player.turn += 1;
+    }
+    if (key === keys.RIGHT) {
+      game.player.turn -= 1;
+    }
+    if ((key === keys.SPACE) && (!game.player.frozen)) {
+      sounds.fire.play();
+      game.bullets.push(game.player.fire());
+    }
+  }
+  else if (game.stage === GameStage.game_over) {
+    if (key === keys.BACKSPACE) {
+      game.initials = game.initials.substring(0, game.initials.length - 1);
+    }
+    else if ((key === keys.RETURN) && (game.initials.length > 0)) {
+      let leaderBoard = [[game.initials, game.score]];
+      game.leader_board.clear();
+      game.stage = GameStage.leader_board;
+    }
+    else if ((game.initials.length < 3) && key.startsWith('Key')) {
+      game.initials += key.substring(3);
+    }
+  }
+  else if (game.stage === GameStage.leader_board) {
+    if (key === keys.SPACE) {
+      game.stage = GameStage.start;
+    }
+  }
+}
+
+function on_key_up(key) {
+  if (game.stage === GameStage.game) {
+    if (key === keys.UP) {
+      game.player.thrust = false;
+    }
+    if (key === keys.LEFT) {
+      game.player.turn -= 1;
+    }
+    if (key === keys.RIGHT) {
+      game.player.turn += 1;
+    }
+  }
+}
+
+function start_game(restart_game = true) {
+  if (restart_game) {
+    game.level = 1;
+    game.score = 0;
+    game.initials = '';
+  }
+  create_asteroids();
+  game.lives = 3;
+  game.player.thrust = false;
+  game.player.turn = 0;
+  game.player.angle = 0.0;
+  game.player.velocity = new Vecta();
+  game.player.pos = [WIDTH / 2, HEIGHT / 2];
+  game.player.exact_pos = new Vecta(game.player.center);
+  game.stage = GameStage.game;
+  make_invulnerable();
+}
+
+function draw() {
+  screen.blit(stars, [0, 0]);
+  if (game.stage === GameStage.start) {
+    screen.draw.text('Press SPACE to start', {
+      center: [WIDTH / 2, HEIGHT / 2],
+      color: 'white'
+    });
+  }
+  else if (game.stage === GameStage.game) {
+    if (game.player.show) {
+      game.player.draw();
+    }
+    for (let i = 0; i < game.lives; i++) {
+      life_icons[i].draw();
+    }
+    screen.draw.text(Math.round(game.score).toFixed(0), {
+      midtop: [WIDTH / 2, 10]
+    });
+  }
+  else if (game.stage === GameStage.level_complete) {
+    screen.draw.text(`LEVEL ${ game.level } COMPLETE!`, {
+      midbottom: [WIDTH / 2, HEIGHT / 2],
+      fontsize: 60
+    });
+    screen.draw.text(Math.round(game.score).toFixed(0), {
+      midtop: [WIDTH / 2, 10]
+    });
+    screen.draw.text('Next level in 3.. 2.. 1..', {
+      midtop: [WIDTH / 2, HEIGHT / 2]
+    });
+  }
+  else if (game.stage === GameStage.game_over) {
+    screen.draw.text('GAME OVER!', {
+      midbottom: [WIDTH / 2, HEIGHT / 2],
+      fontsize: 60
+    });
+    screen.draw.text(Math.round(game.score).toFixed(0), {
+      midtop: [WIDTH / 2, 10]
+    });
+    screen.draw.text('Enter Initials:', {
+      midtop: [WIDTH / 2, HEIGHT / 2]
+    });
+    screen.draw.text(game.initials, {
+      midtop: [WIDTH / 2, (HEIGHT / 2) + 24]
+    });
+  }
+  else if (game.stage === GameStage.leader_board) {
+    let top = 60;
+    screen.draw.text('High Scores', {
+      midtop: [WIDTH / 2, top],
+      fontsize: 40
+    });
+    if (game.leader_board.size > 0) {
+      top += 40;
+      let max_top = top;
+      for (let [initial, score] of game.leader_board.get('leader_board')) {
+        screen.draw.text(`${ initial } ${ Math.round(score) }`, {
+          midtop: [(WIDTH / 2) - 60, top]
+        });
+        top += 24;
+      }
+
+      for (let [initial, score] of game.leader_board.get('max_leaders')) {
+        screen.draw.text(`${ initial } ${ Math.round(score) }`, {
+          midtop: [(WIDTH / 2) + 60, max_top]
+        });
+        max_top += 24;
+      }
+    }
+
+    screen.draw.text('Press SPACE to restart', {
+      midtop: [WIDTH / 2, top + 40]
+    });
+  }
+
+  for (let bullet of game.bullets) {
+    bullet.draw();
+  }
+  for (let asteroid of game.asteroids) {
+    asteroid.draw();
+  }
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  sounds.LOAD('#soundLoader audio');
+  // Non-standard order for Surface
+  screen.set_mode('#screen', '#reset', '#pause');
+  reset();
+  screen.draw.playButton();
+});
+</script>
+</body>
+
+</html>
