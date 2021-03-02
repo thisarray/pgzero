@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mines</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/blank.png" alt="blank" data-name="blank">
+  <img class="hidden" src="images/cover.png" alt="cover" data-name="cover">
+  <img class="hidden" src="images/eight.png" alt="eight" data-name="eight">
+  <img class="hidden" src="images/five.png" alt="five" data-name="five">
+  <img class="hidden" src="images/flag.png" alt="flag" data-name="flag">
+  <img class="hidden" src="images/four.png" alt="four" data-name="four">
+  <img class="hidden" src="images/mine.png" alt="mine" data-name="mine">
+  <img class="hidden" src="images/one.png" alt="one" data-name="one">
+  <img class="hidden" src="images/seven.png" alt="seven" data-name="seven">
+  <img class="hidden" src="images/six.png" alt="six" data-name="six">
+  <img class="hidden" src="images/three.png" alt="three" data-name="three">
+  <img class="hidden" src="images/two.png" alt="two" data-name="two">
+</section>
+
+<main>
+<h1>mines</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+#to run this game type the command pgzrun mines.py into the terminal whilst in this directory
+
+###########
+# Imports #
+###########
+from random import randint
+from math import floor
+
+#imports the top tiles
+cover = Actor(&#x27;cover&#x27;)
+flag  = Actor(&#x27;flag&#x27;)
+
+#creates a dictionary that stores all the possible bottom tile types
+tiles = {0: Actor(&#x27;blank&#x27;),
+         1: Actor(&#x27;one&#x27;),
+         2: Actor(&#x27;two&#x27;),
+         3: Actor(&#x27;three&#x27;),
+         4: Actor(&#x27;four&#x27;),
+         5: Actor(&#x27;five&#x27;),
+         6: Actor(&#x27;six&#x27;),
+         7: Actor(&#x27;seven&#x27;),
+         8: Actor(&#x27;eight&#x27;),
+         &#x27;M&#x27;: Actor(&#x27;mine&#x27;),}
+
+##############
+# Game Setup #
+##############
+
+wide  = 10
+tall  = 10
+mines = 10
+
+
+##################
+# Function Setup #
+##################
+
+def setup_empty_grid(wide, tall, filler):
+    grid = []
+    for y in range(tall):
+        row = []
+        for x in range(wide):
+            row.append(filler)
+        grid.append(row)
+    return grid
+
+def populate_grid(grid, mines, wide, tall):
+    for mine in range(mines):
+        x, y = randint(0, wide - 1), randint(0,tall - 1)
+        while grid[y][x] == &#x27;M&#x27;:
+            x, y = randint(0, wide - 1), randint(0,tall - 1)
+        grid[y][x] = &#x27;M&#x27;
+    return grid
+
+def count_mines(grid):
+    for y in range(len(grid)):
+        for x in range(len(grid[0])):
+            if grid[y][x] != &#x27;M&#x27;:
+                neighbors = [(x - 1, y - 1), (x    , y - 1), (x + 1, y - 1),
+                             (x - 1, y    ),                 (x + 1, y    ),
+                             (x - 1, y + 1), (x    , y + 1), (x + 1, y + 1)]
+                for nx, ny in neighbors:
+                    try:
+                        if ny &gt;= 0 and nx &gt;= 0 and grid[ny][nx] == &#x27;M&#x27;:
+                            grid[y][x] += 1
+                    except:
+                        pass
+    return grid
+
+def draw():
+    xpos, ypos = -15, -15
+    for row in range(len(base_grid)):
+        ypos += 30
+        xpos = -15
+        for col in range(len(base_grid[0])):
+            xpos += 30
+            gridpos = base_grid[row][col]
+            tiles[gridpos].pos = xpos, ypos
+            tiles[gridpos].draw()
+    xpos, ypos = -15, -15
+    for row in range(len(top_grid)):
+        ypos += 30
+        xpos = -15
+        for col in range(len(top_grid[0])):
+            xpos += 30
+            if top_grid[row][col] == 1:
+                cover.pos = xpos, ypos
+                cover.draw()
+            elif top_grid[row][col] == &#x27;F&#x27;:
+                flag.pos = xpos, ypos
+                flag.draw()
+
+
+def on_mouse_down(pos, button):
+    mousepos = (floor(pos[0]/30), floor(pos[1]/30))
+    if button == mouse.LEFT:
+        if top_grid[mousepos[1]][mousepos[0]] != &#x27;F&#x27;:
+            top_grid[mousepos[1]][mousepos[0]] = 0
+            if base_grid[mousepos[1]][mousepos[0]] == 0:
+                edge_detection((floor(pos[0]/30), floor(pos[1]/30)), base_grid)
+    else:
+        if top_grid[mousepos[1]][mousepos[0]] == 1:
+            top_grid[mousepos[1]][mousepos[0]] = &#x27;F&#x27;
+        elif top_grid[mousepos[1]][mousepos[0]] == &#x27;F&#x27;:
+            top_grid[mousepos[1]][mousepos[0]] = 1
+
+def edge_detection(gridpos, grid):
+    zeros = [gridpos]
+    past_zeros = []
+    for zero in zeros:
+        top_grid[zero[1]][zero[0]] = 0
+        x, y = zero
+        neighbors = [(x - 1, y - 1), (x    , y - 1), (x + 1, y - 1),
+                     (x - 1, y    ),                 (x + 1, y    ),
+                     (x - 1, y + 1), (x    , y + 1), (x + 1, y + 1)]
+        for nx, ny in neighbors:
+            try:
+                if ny &gt;= 0 and nx &gt;= 0:
+                    if grid[ny][nx] == 0 and top_grid[ny][nx] == 1:
+                        if top_grid[ny][nx] != &#x27;F&#x27;:
+                            top_grid[ny][nx] = 0
+                        if (nx, ny) not in zeros:
+                            zeros.append((nx, ny))
+                    else:
+                        if top_grid[ny][nx] != &#x27;F&#x27;:
+                            top_grid[ny][nx] = 0
+
+            except:
+                pass
+    return top_grid
+
+################
+# Screen Setup #
+################
+
+#creates two variables that define the width and height of the screen
+WIDTH = ((wide * 30) + 1) #adapts the screen size to fit the number of tiles chosen
+HEIGHT = ((tall * 30) + 1) #adapts the screen size to fit the number of tiles chosen
+
+top_grid  = setup_empty_grid(wide, tall, 1)
+base_grid = setup_empty_grid(wide, tall, 0)
+base_grid = populate_grid(base_grid, mines, wide, tall)
+base_grid = count_mines(base_grid)
+</code></pre>
+</main>
+
+<script>
+/***********
+ * Imports *
+ ***********/
+
+//imports the top tiles
+var cover, flag;
+
+//creates a dictionary that stores all the possible bottom tile types
+var tiles;
+
+/**************
+ * Game Setup *
+ **************/
+
+const WIDE = 10;
+const TALL = 10;
+const MINES = 10;
+
+const GRID_SIZE = 30;
+const MINE_VALUE = 9;
+const UNCOVER_VALUE = 0;
+const COVER_VALUE = 1;
+const FLAG_VALUE = 2;
+
+/******************
+ * Function Setup *
+ ******************/
+
+function setup_empty_grid(wide, tall, filler) {
+  let grid = [], row;
+  for (let y = 0; y < tall; y++) {
+    row = [];
+    for (let x = 0; x < wide; x++) {
+      row.push(filler);
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
+/*
+ * Return a random integer N such that min <= N < max.
+ */
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+function populate_grid(grid, mines, wide, tall) {
+  for (let mine = 0; mine < mines; mine++) {
+    let x, y;
+    do {
+      x = getRandomInteger(0, wide);
+      y = getRandomInteger(0, tall);
+    } while (grid[y][x] === MINE_VALUE);
+    grid[y][x] = MINE_VALUE;
+  }
+  return grid;
+}
+
+function count_mines(grid) {
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[0].length; x++) {
+      if (grid[y][x] !== MINE_VALUE) {
+        for (let [nx, ny] of [
+          [x - 1, y - 1], [x, y - 1], [x + 1, y - 1],
+          [x - 1, y], [x + 1, y],
+          [x - 1, y + 1], [x, y + 1], [x + 1, y + 1]]) {
+          if ((ny >= 0) && (nx >= 0) && (ny < grid.length) && (nx < grid[0].length) &&
+              (grid[ny][nx] === MINE_VALUE)) {
+            grid[y][x] += 1;
+          }
+        }
+      }
+    }
+  }
+  return grid;
+}
+
+function draw() {
+  let ypos = Math.floor(-GRID_SIZE / 2),
+      xpos, gridpos;
+  for (let row = 0; row < base_grid.length; row++) {
+    ypos += GRID_SIZE;
+    xpos = Math.floor(-GRID_SIZE / 2);
+    for (let col = 0; col < base_grid[0].length; col++) {
+      xpos += GRID_SIZE;
+      gridpos = base_grid[row][col];
+      tiles[gridpos].pos = [xpos, ypos];
+      tiles[gridpos].draw();
+    }
+  }
+  ypos = Math.floor(-GRID_SIZE / 2);
+  for (let row = 0; row < top_grid.length; row++) {
+    ypos += GRID_SIZE;
+    xpos = Math.floor(-GRID_SIZE / 2);
+    for (let col = 0; col < top_grid[0].length; col++) {
+      xpos += GRID_SIZE;
+      if (top_grid[row][col] === COVER_VALUE) {
+        cover.pos = [xpos, ypos];
+        cover.draw();
+      }
+      else if (top_grid[row][col] === FLAG_VALUE) {
+        flag.pos = [xpos, ypos];
+        flag.draw();
+      }
+    }
+  }
+}
+
+function on_mouse_down(pos, button) {
+  let mousepos = [Math.floor(pos[0] / GRID_SIZE), Math.floor(pos[1] / GRID_SIZE)];
+  if (button === mouse.LEFT) {
+    if (top_grid[mousepos[1]][mousepos[0]] !== FLAG_VALUE) {
+      top_grid[mousepos[1]][mousepos[0]] = UNCOVER_VALUE;
+      if (base_grid[mousepos[1]][mousepos[0]] === 0) {
+        edge_detection(mousepos, base_grid);
+      }
+    }
+  }
+  else {
+    if (top_grid[mousepos[1]][mousepos[0]] === COVER_VALUE) {
+      top_grid[mousepos[1]][mousepos[0]] = FLAG_VALUE;
+    }
+    else if (top_grid[mousepos[1]][mousepos[0]] === FLAG_VALUE) {
+      top_grid[mousepos[1]][mousepos[0]] = COVER_VALUE;
+    }
+  }
+}
+
+function edge_detection(gridpos, grid) {
+  let zeros = [gridpos],
+      zero, x, y;
+  while (zeros.length > 0) {
+    zero = zeros.shift();
+    x = zero[0];
+    y = zero[1];
+    top_grid[y][x] = UNCOVER_VALUE;
+    for (let [nx, ny] of [
+      [x - 1, y - 1], [x, y - 1], [x + 1, y - 1],
+      [x - 1, y], [x + 1, y],
+      [x - 1, y + 1], [x, y + 1], [x + 1, y + 1]]) {
+      if ((ny >= 0) && (nx >= 0) && (ny < grid.length) && (nx < grid[0].length)) {
+        if ((grid[ny][nx] === 0) && (top_grid[ny][nx] === COVER_VALUE)) {
+          if (top_grid[ny][nx] !== FLAG_VALUE) {
+            top_grid[ny][nx] = UNCOVER_VALUE;
+          }
+          if (zeros.filter(z => (z[0] === nx) && (z[1] === ny)).length <= 0) {
+            zeros.push([nx, ny]);
+          }
+        }
+        else {
+          if (top_grid[ny][nx] !== FLAG_VALUE) {
+            top_grid[ny][nx] = UNCOVER_VALUE;
+          }
+        }
+      }
+    }
+  }
+  return top_grid;
+}
+
+/****************
+ * Screen Setup *
+ ****************/
+
+//creates two variables that define the width and height of the screen
+var WIDTH, HEIGHT, top_grid, base_grid;
+
+function reset() {
+  WIDTH = (WIDE * GRID_SIZE) + 1; //adapts the screen size to fit the number of tiles chosen
+  HEIGHT = (TALL * GRID_SIZE) + 1; //adapts the screen size to fit the number of tiles chosen
+
+  cover = new Actor('cover');
+  flag = new Actor('flag');
+
+  tiles = [];
+  for (let name of ['blank', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'mine']) {
+    tiles.push(new Actor(name));
+  }
+
+  top_grid  = setup_empty_grid(WIDE, TALL, COVER_VALUE);
+  base_grid = setup_empty_grid(WIDE, TALL, 0);
+  base_grid = populate_grid(base_grid, MINES, WIDE, TALL);
+  base_grid = count_mines(base_grid);
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
