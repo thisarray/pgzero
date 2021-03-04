@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>snake</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/apple.png" alt="apple" data-name="apple">
+  <img class="hidden" src="images/snake_corner.png" alt="snake_corner" data-name="snake_corner">
+  <img class="hidden" src="images/snake_head.png" alt="snake_head" data-name="snake_head">
+  <img class="hidden" src="images/snake_straight.png" alt="snake_straight" data-name="snake_straight">
+  <img class="hidden" src="images/snake_tail.png" alt="snake_tail" data-name="snake_tail">
+</section>
+
+<main>
+<h1>snake</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+import random
+from enum import Enum
+from collections import deque
+from itertools import islice
+
+from pygame.transform import flip, rotate
+
+
+TILE_SIZE = 24
+
+TILES_W = 20
+TILES_H = 15
+
+WIDTH = TILE_SIZE * TILES_W
+HEIGHT = TILE_SIZE * TILES_H
+
+
+def screen_rect(tile_pos):
+    &quot;&quot;&quot;Get the screen rectangle for the given tile coordinate.&quot;&quot;&quot;
+    x, y = tile_pos
+    return Rect(TILE_SIZE * x, TILE_SIZE * y, TILE_SIZE, TILE_SIZE)
+
+
+class Direction(Enum):
+    RIGHT = (1, 0)
+    UP = (0, -1)
+    LEFT = (-1, 0)
+    DOWN = (0, 1)
+
+    def opposite(self):
+        x, y = self.value
+        return Direction((-x, -y))
+
+
+class Crashed(Exception):
+    &quot;&quot;&quot;The snake has crashed into itself.&quot;&quot;&quot;
+
+
+class Snake:
+    def __init__(self, pos=(TILES_W // 2, TILES_H // 2)):
+        self.pos = pos
+        self.dir = Direction.LEFT
+        self.length = 4
+        self.tail = deque(maxlen=self.length)
+
+        x, y = pos
+        for i in range(self.length):
+            p = (x + i, y)
+            segment = p, self.dir
+            self.tail.append(segment)
+
+    @property
+    def lastdir(self):
+        return self.tail[0][1]
+
+    def move(self):
+        dx, dy = self.dir.value
+        px, py = self.pos
+        px = (px + dx) % TILES_W
+        py = (py + dy) % TILES_H
+
+        self.pos = px, py
+        segment = self.pos, self.dir
+        self.tail.appendleft(segment)
+        for t, d in islice(self.tail, 1, None):
+            if t == self.pos:
+                raise Crashed(t)
+
+    def __len__(self):
+        return self.length
+
+    def __contains__(self, pos):
+        return any(p == pos for p, d in self.tail)
+
+    def grow(self):
+        self.length += 1
+        self.tail = deque(self.tail, maxlen=self.length)
+
+    def draw(self):
+        for pos in self.tail:
+            screen.draw.filled_rect(screen_rect(pos), &#x27;green&#x27;)
+
+
+class SnakePainter:
+    def __init__(self):
+        right, up, left, down = (d.value for d in Direction)
+        straight = images.snake_straight
+        corner = images.snake_corner
+        corner2 = flip(corner, True, False)
+        self.tiles = {
+            # Straight sections in each direction
+            (right, right): straight,
+            (up, up): rotate(straight, 90),
+            (left, left): rotate(straight, 180),
+            (down, down): rotate(straight, 270),
+
+            # Corner sections in the anticlockwise direction
+            (right, up): corner,
+            (up, left): rotate(corner, 90),
+            (left, down): rotate(corner, 180),
+            (down, right): rotate(corner, 270),
+
+            # Corner sections in the clockwise direction
+            (left, up): corner2,
+            (up, right): rotate(corner2, -90),
+            (right, down): rotate(corner2, -180),
+            (down, left): rotate(corner2, -270),
+        }
+
+        head = images.snake_head
+        self.heads = {
+            right: head,
+            up: rotate(head, 90),
+            left: rotate(head, 180),
+            down: rotate(head, 270),
+        }
+
+        tail = images.snake_tail
+        self.tails = {
+            right: tail,
+            up: rotate(tail, 90),
+            left: rotate(tail, 180),
+            down: rotate(tail, 270),
+        }
+
+    def draw(self, snake):
+        for i, (pos, dir) in enumerate(snake.tail):
+            if not i:
+                # draw head
+                tile = self.heads[snake.dir.value]
+            elif i &gt;= len(snake.tail) - 1:
+                # draw tail
+                nextdir = snake.tail[i - 1][1]
+                tile = self.tails[nextdir.value]
+            else:
+                nextdir = snake.tail[i - 1][1]
+                key = dir.value, nextdir.value
+                try:
+                    tile = self.tiles[key]
+                except KeyError:
+                    tile = self.tiles[dir.value, dir.value]
+
+            r = screen_rect(pos)
+            screen.blit(tile, r)
+
+
+class Apple:
+    def __init__(self):
+        self.pos = 0, 0
+
+    def draw(self):
+        screen.blit(images.apple, screen_rect(self.pos))
+
+
+KEYBINDINGS = {
+    keys.LEFT: Direction.LEFT,
+    keys.RIGHT: Direction.RIGHT,
+    keys.UP: Direction.UP,
+    keys.DOWN: Direction.DOWN,
+}
+
+
+snake = Snake()
+snake.alive = True
+
+snake_painter = SnakePainter()
+
+apple = Apple()
+
+
+def place_apple():
+    &quot;&quot;&quot;Randomly place the apple somewhere that isn&#x27;t currently occupied.
+
+    We will generate coordinates at random until we find some that are not on
+    top of the snake.
+
+    &quot;&quot;&quot;
+    if len(snake) == TILES_W * TILES_H:
+        raise ValueError(&quot;No empty spaces!&quot;)
+
+    while True:
+        pos = (
+            random.randrange(TILES_W),
+            random.randrange(TILES_H)
+        )
+
+        if pos not in snake:
+            apple.pos = pos
+            return
+
+
+def on_key_down(key):
+    if not snake.alive:
+        return
+
+    dir = KEYBINDINGS.get(key)
+    if dir and dir != snake.lastdir.opposite():
+        snake.dir = dir
+        return
+
+
+def tick():
+    if not snake.alive:
+        return
+
+    try:
+        snake.move()
+    except Crashed:
+        snake.alive = False
+        stop()
+    else:
+        if snake.pos == apple.pos:
+            snake.grow()
+            start()
+            place_apple()
+
+
+def start():
+    &quot;&quot;&quot;Set/update the tick interval.
+
+    This is called whenever the snake grows to make the game run faster.
+
+    &quot;&quot;&quot;
+    interval = max(0.1, 0.4 - 0.03 * (len(snake) - 3))
+    clock.unschedule(tick)
+    clock.schedule_interval(tick, interval)
+
+
+def stop():
+    &quot;&quot;&quot;Stop the game from updating.&quot;&quot;&quot;
+    clock.unschedule(tick)
+
+
+def draw():
+    screen.clear()
+    snake_painter.draw(snake)
+    apple.draw()
+
+    screen.draw.text(
+        &#x27;Score: %d&#x27; % len(snake),
+        color=&#x27;white&#x27;,
+        topright=(WIDTH - 5, 5)
+    )
+
+    if not snake.alive:
+        screen.draw.text(
+            &quot;You died!&quot;,
+            color=&#x27;white&#x27;,
+            center=(WIDTH/2, HEIGHT/2)
+        )
+
+
+
+
+place_apple()
+start()
+</code></pre>
+</main>
+
+<script>
+const TILE_SIZE = 24;
+
+const TILES_W = 20;
+const TILES_H = 15;
+
+WIDTH = TILE_SIZE * TILES_W;
+HEIGHT = TILE_SIZE * TILES_H;
+
+/*
+ * Get the screen rectangle for the given tile coordinate.
+ */
+function screen_rect(tile_pos) {
+  let [x=0, y=0] = tile_pos;
+  return new Rect(TILE_SIZE * x, TILE_SIZE * y, TILE_SIZE, TILE_SIZE);
+}
+
+const DIRECTION = new Map([
+  [keys.RIGHT, {dx: 1, dy: 0, opposite: keys.LEFT}],
+  [keys.UP, {dx: 0, dy: -1, opposite: keys.DOWN}],
+  [keys.LEFT, {dx: -1, dy: 0, opposite: keys.RIGHT}],
+  [keys.DOWN, {dx: 0, dy: 1, opposite: keys.UP}]
+]);
+
+class Snake {
+  constructor() {
+    this.pos = [Math.floor(TILES_W / 2), Math.floor(TILES_H / 2)];
+    this.dir = keys.LEFT;
+    this.length = 4;
+    this.tail = [];
+
+    for (let i = 0; i < this.length; i++) {
+      this.tail.push([this.pos[0] + i, this.pos[1], this.dir]);
+    }
+  }
+
+  get lastdir() {
+    return this.tail[0][2];
+  }
+
+  move() {
+    let {dx, dy, opposite} = DIRECTION.get(this.dir),
+        [px=0, py=0] = this.pos;
+    /*
+     * JavaScript % always takes the sign of the dividend
+     * so we add the divisor to ensure the dividend is positive.
+     */
+    px += dx;
+    while (px < 0) {
+      px += TILES_W;
+    }
+    px = px % TILES_W;
+    py += dy;
+    while (py < 0) {
+      py += TILES_H;
+    }
+    py = py % TILES_H;
+
+    this.pos = [px, py];
+    this.tail.unshift([px, py, this.dir]);
+    while (this.tail.length > this.length) {
+      this.tail.pop();
+    }
+    for (let [tx, ty, tdir] of this.tail.slice(1)) {
+      if ((tx === px) && (ty === py)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  has(pos) {
+    let [x=0, y=0] = pos;
+    return (this.tail.filter(t => (t[0] === x) && (t[1] === y)).length > 0);
+  }
+
+  grow() {
+    this.length += 1;
+  }
+
+  draw() {
+    for (let [tx, ty, tdir] of this.tail) {
+      screen.draw.filled_rect(screen_rect([tx, ty]), 'green');
+    }
+  }
+}
+
+class SnakePainter {
+  constructor() {
+    this.head = new Actor('snake_head');
+    this.tail = new Actor('snake_tail');
+    this.straight = new Actor('snake_straight');
+    this.corner = new Actor('snake_corner');
+  }
+
+  draw(snake) {
+    let i = 0, r, nextdir;
+    for (let [tx, ty, tdir] of snake.tail) {
+      r = screen_rect([tx, ty]);
+      if (i <= 0) {
+        // draw head
+        if (snake.dir === keys.UP) {
+          this.head.angle = 90;
+        }
+        else if (snake.dir === keys.LEFT) {
+          this.head.angle = 180;
+        }
+        else if (snake.dir === keys.DOWN) {
+          this.head.angle = 270;
+        }
+        this.head.pos = r.center;
+        this.head.draw();
+        this.head.angle = 0;
+      }
+      else if (i >= (snake.tail.length - 1)) {
+        // draw tail
+        nextdir = snake.tail[i-1][2];
+
+        if (nextdir === keys.UP) {
+          this.tail.angle = 90;
+        }
+        else if (nextdir === keys.LEFT) {
+          this.tail.angle = 180;
+        }
+        else if (nextdir === keys.DOWN) {
+          this.tail.angle = 270;
+        }
+        this.tail.pos = r.center;
+        this.tail.draw();
+        this.tail.angle = 0;
+      }
+      else {
+        nextdir = snake.tail[i-1][2];
+
+        if (tdir === nextdir) {
+          // Straight sections in each direction
+          if (nextdir === keys.UP) {
+            this.straight.angle = 90;
+          }
+          else if (nextdir === keys.LEFT) {
+            this.straight.angle = 180;
+          }
+          else if (nextdir === keys.DOWN) {
+            this.straight.angle = 270;
+          }
+          this.straight.pos = r.center;
+          this.straight.draw();
+          this.straight.angle = 0;
+        }
+        else {
+          // Corner sections in the clockwise direction are faked using
+          // Corner sections in the anticlockwise direction since there is no Surface to flip
+          if (((tdir === keys.UP) && (nextdir === keys.LEFT)) ||
+              ((tdir === keys.RIGHT) && (nextdir === keys.DOWN)) ) {
+            this.corner.angle = 90;
+          }
+          else if (((tdir === keys.LEFT) && (nextdir === keys.DOWN)) ||
+                   ((tdir === keys.UP) && (nextdir === keys.RIGHT)) ) {
+            this.corner.angle = 180;
+          }
+          else if (((tdir === keys.DOWN) && (nextdir === keys.RIGHT)) ||
+                   ((tdir === keys.LEFT) && (nextdir === keys.UP)) ) {
+            this.corner.angle = 270;
+          }
+          this.corner.pos = r.center;
+          this.corner.draw();
+          this.corner.angle = 0;
+        }
+      }
+
+      i++;
+    }
+  }
+}
+
+class Apple {
+  constructor() {
+    this.pos = [0, 0];
+  }
+
+  draw() {
+    screen.blit('apple', screen_rect(this.pos).topleft);
+  }
+}
+
+var snake, snake_painter, apple;
+
+/*
+ * Return a random integer N such that min <= N < max.
+ */
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+/*
+ * Randomly place the apple somewhere that isn't currently occupied.
+ *
+ * We will generate coordinates at random until we find some that are not on
+ * top of the snake.
+ *
+ */
+function place_apple() {
+  if (snake.length === (TILES_W * TILES_H)) {
+    throw new Error("No empty spaces!");
+  }
+
+  let x, y;
+  while (true) {
+    x = getRandomInteger(0, TILES_W);
+    y = getRandomInteger(0, TILES_H);
+
+    if (!snake.has([x, y])) {
+      apple.pos = [x, y];
+      return;
+    }
+  }
+}
+
+function on_key_down(key) {
+  if (!snake.alive) {
+    return;
+  }
+
+  if (DIRECTION.has(key)) {
+    let {dx, dy, opposite} = DIRECTION.get(snake.lastdir);
+    if (key !== opposite) {
+      snake.dir = key;
+      return;
+    }
+  }
+}
+
+function tick() {
+  if (!snake.alive) {
+    return;
+  }
+
+  if (snake.move()) {
+    snake.alive = false;
+    stop();
+  }
+  else {
+    let [sx=0, sy=0] = snake.pos,
+        [ax=0, ay=0] = apple.pos;
+    if ((sx === ax) && (sy === ay)) {
+      snake.grow();
+      start();
+      place_apple();
+    }
+  }
+}
+
+/*
+ * Set/update the tick interval.
+ *
+ * This is called whenever the snake grows to make the game run faster.
+ *
+ */
+function start() {
+  let interval = Math.max(0.1, 0.4 - 0.03 * (snake.length - 3));
+  clock.unschedule(tick);
+  clock.schedule_interval(tick, interval);
+}
+
+/*
+ * Stop the game from updating.
+ */
+function stop() {
+  clock.unschedule(tick);
+}
+
+function draw() {
+  screen.clear();
+  snake_painter.draw(snake);
+  apple.draw();
+
+  screen.draw.text(`Score: ${ snake.length }`, {
+    color: 'white',
+    topright: [WIDTH - 5, 5]
+  });
+
+  if (!snake.alive) {
+    screen.draw.text("You died!", {
+      color: 'white',
+      center: [WIDTH / 2, HEIGHT / 2]
+    });
+  }
+}
+
+function reset() {
+  snake = new Snake();
+  snake.alive = true;
+
+  snake_painter = new SnakePainter();
+
+  apple = new Apple();
+
+  place_apple();
+  start();
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
