@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tron</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+@font-face {
+  font-family: 'tr2n';
+  src: url('fonts/tr2n.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/bike.png" alt="bike" data-name="bike">
+</section>
+
+<main>
+<h1>tron</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+from pygame import Surface
+from pygame import transform
+from collections import deque
+
+WIDTH = 800
+HEIGHT = 800
+
+# The grid is lower resolution than the screen; this constant
+# defines how much
+GRID_SIZE = 5
+
+CYAN = (0, 255, 255)
+BLACK = (0, 0, 0)
+
+
+def screen_to_grid(x, y):
+    &quot;&quot;&quot;Convert screen coordinates x, y to grid coords.&quot;&quot;&quot;
+    return round(x / GRID_SIZE), round(y / GRID_SIZE)
+
+
+trails = Surface(screen_to_grid(WIDTH, HEIGHT))
+
+
+speed = GRID_SIZE
+bike = Actor(&#x27;bike&#x27;, anchor_x=28)
+
+# Cardinal directions -&gt; (angle, velocity, reverse)
+DIRECTIONS = {
+    keys.RIGHT: (0, (speed, 0), keys.LEFT),
+    keys.UP: (90, (0, -speed), keys.DOWN),
+    keys.LEFT: (180, (-speed, 0), keys.RIGHT),
+    keys.DOWN: (270, (0, speed), keys.UP),
+}
+
+
+def reset_bike():
+    trails.fill(BLACK)
+    bike.pos = (WIDTH + GRID_SIZE) // 2, (HEIGHT + GRID_SIZE) // 2
+    bike.dead = False
+    bike.angle, bike.v, bike.reverse = DIRECTIONS[keys.RIGHT]
+    bike.trail = deque(maxlen=200)
+
+
+def kill_bike():
+    bike.dead = True
+    bike.explosion_radius = 2
+
+
+# Reset the bike immediately
+reset_bike()
+
+
+def update():
+    # Fade down the trail
+    for t in bike.trail:
+        r, g, b, *_ = trails.get_at(t)
+        c = round(g * 0.99)
+        trails.set_at(t, (round(r * 0.97), c, c))
+
+    if bike.dead:
+        bike.explosion_radius += 20
+        return
+    vx, vy = bike.v
+    x, y = bike.pos
+    x += vx
+    y += vy
+    bike.pos = x, y
+
+    trail_pos = screen_to_grid(x, y)
+
+    try:
+        current_value = trails.get_at(trail_pos)[2]
+    except IndexError:
+        # Out of bounds! we crashed
+        kill_bike()
+        return
+
+    if current_value:
+        # We&#x27;ve already set this pixel, so this is a crash
+        kill_bike()
+    else:
+        trails.set_at(trail_pos, (255, 255, 255))
+        bike.trail.append(trail_pos)
+
+
+def draw():
+    transform.scale(trails, (WIDTH, HEIGHT), screen.surface)
+    if bike.dead:
+        screen.draw.circle(
+            pos=bike.pos,
+            radius=round(bike.explosion_radius),
+            color=CYAN,
+        )
+        screen.draw.text(
+            &#x27;YOU ARE DEREZZED!\nPRESS SPACE TO RESTART&#x27;,
+            center=(WIDTH // 2, 100),
+            color=CYAN,
+            fontsize=50,
+            fontname=&quot;tr2n&quot;
+        )
+    else:
+        bike.draw()
+
+
+def on_key_down(key):
+    if bike.dead:
+        if key is keys.SPACE:
+            reset_bike()
+
+    elif key in DIRECTIONS and key != bike.reverse:
+        bike.angle, bike.v, bike.reverse = DIRECTIONS[key]
+</code></pre>
+</main>
+
+<script>
+WIDTH = 800;
+HEIGHT = 800;
+
+// The grid is lower resolution than the screen; this constant
+// defines how much
+const GRID_SIZE = 5;
+
+const CYAN = [0, 255, 255];
+const BLACK = [0, 0, 0];
+
+/*
+ * Convert screen coordinates x, y to grid coords.
+ */
+function screen_to_grid(x, y) {
+  return [Math.round(x / GRID_SIZE), Math.round(y / GRID_SIZE)];
+}
+
+const TRAIL_LENGTH = 200;
+var bike;
+
+// Cardinal directions -> (angle, velocity, reverse)
+const DIRECTIONS = new Map([
+  [keys.RIGHT, {angle: 0, v: [GRID_SIZE, 0], reverse: keys.LEFT}],
+  [keys.UP, {angle: 90, v: [0, -GRID_SIZE], reverse: keys.DOWN}],
+  [keys.LEFT, {angle: 180, v: [-GRID_SIZE, 0], reverse: keys.RIGHT}],
+  [keys.DOWN, {angle: 270, v: [0, GRID_SIZE], reverse: keys.UP}]
+]);
+
+function reset_bike() {
+  bike.pos = [Math.floor((WIDTH + GRID_SIZE) / 2), Math.floor((HEIGHT + GRID_SIZE) / 2)];
+  bike.dead = false;
+  let {angle, v, reverse} = DIRECTIONS.get(keys.RIGHT);
+  bike.angle = angle;
+  bike.v = v;
+  bike.reverse = reverse;
+  bike.trail = [];
+}
+
+function kill_bike() {
+  bike.dead = true;
+  bike.explosion_radius = 2;
+}
+
+function reset() {
+  bike = new Actor('bike');
+
+  // Reset the bike immediately
+  reset_bike();
+}
+
+function update() {
+  // Fade down the trail
+  let newTrail = [], c;
+  for (let [x, y, r, g, b] of bike.trail.slice(-TRAIL_LENGTH)) {
+    c = Math.round(g * 0.99);
+    newTrail.push([x, y, Math.round(r * 0.97), c, c]);
+  }
+  bike.trail = newTrail;
+
+  if (bike.dead) {
+    bike.explosion_radius += 20;
+    return;
+  }
+
+  let [vx=0, vy=0] = bike.v,
+      [x=0, y=0] = bike.pos;
+  x += vx;
+  y += vy;
+  bike.pos = [x, y];
+
+  let [gridX=0, gridY=0] = screen_to_grid(x, y);
+
+  if ((gridX < 0) || (gridY < 0) || (gridX >= Math.floor(WIDTH / GRID_SIZE)) || (gridY >= Math.floor(HEIGHT / GRID_SIZE))) {
+    // Out of bounds! we crashed
+    kill_bike();
+    return;
+  }
+
+  if (bike.trail.filter(t => (t[0] === gridX) && (t[1] === gridY)).length > 0) {
+    // We've already set this pixel, so this is a crash
+    kill_bike();
+  }
+  else {
+    bike.trail.push([gridX, gridY, 255, 255, 255]);
+  }
+}
+
+function draw() {
+  screen.clear();
+  // Draw the trail to compensate for not having a Surface
+  for (let [x, y, r, g, b] of bike.trail) {
+    screen.draw.filled_rect(new Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE), [r, g, b]);
+  }
+
+  if (bike.dead) {
+    screen.draw.circle(bike.pos, Math.round(bike.explosion_radius), CYAN);
+    screen.draw.text('YOU ARE DEREZZED!\nPRESS SPACE TO RESTART', {
+      center: [Math.floor(WIDTH / 2), 100],
+      color: CYAN,
+      fontsize: 50,
+      fontname: "tr2n"
+    });
+  }
+  else {
+    bike.draw();
+  }
+}
+
+function on_key_down(key) {
+  if (bike.dead) {
+    if (key === keys.SPACE) {
+      reset_bike();
+    }
+  }
+  else if (DIRECTIONS.has(key) && (key != bike.reverse)) {
+    let {angle, v, reverse} = DIRECTIONS.get(key);
+    bike.angle = angle;
+    bike.v = v;
+    bike.reverse = reverse;
+  }
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
