@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>main</title>
+  <script src="../../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="musicLoader" class="hidden">
+  <audio class="hidden" controls preload="auto" src="music/hhavok_main.ogg" data-name="hhavok_main">Your browser does not support the audio element.</audio>
+</section>
+
+<main>
+<h1>main</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+&#x27;&#x27;&#x27;
+The MIT License (MIT)
+
+Copyright (c) 2015 David Bern
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+&#x27;&#x27;&#x27;
+import random
+
+def grid_list(block_size):
+    &#x27;&#x27;&#x27;
+    Generates a gridlist used shape class
+    &#x27;&#x27;&#x27;
+    grids = []
+    for y in range(-5, 1):
+        row = []
+        for x in range(0, 6):
+            row.append((x * block_size, y * block_size))
+        grids.append(row)
+
+    return grids
+
+class GameOver(Exception):
+    &#x27;&#x27;&#x27;
+    Exception that is raised when a brick causes a game over state.
+    &#x27;&#x27;&#x27;
+    pass
+
+
+class Shape(object):
+    &#x27;&#x27;&#x27;
+    This will make the foundation for a Shape that the others shapes
+    will inherit.
+    &#x27;&#x27;&#x27;
+    def __init__(self, x_pos, size, color):
+        &#x27;&#x27;&#x27;
+        Inits the shape to start at y_pos and every block is of size in size.
+        OShape consists of 4 blocks, each block is size wide and high.
+        &#x27;&#x27;&#x27;
+        # the widths and heights is determined by the shape and block size.
+        self.block_size = size
+        self._width = size
+        self._height = size
+
+        # Rows of blocks.
+        # _block_init() sets allocates all the rectangles and resets the shape
+        # to start position.
+        self._x = x_pos - (self.block_size * 3)
+        self._y = 0
+        self.piece = []
+
+        self.grid = grid_list(self.block_size)
+
+        self.color = color
+
+    def shape_grid_update(self):
+        &#x27;&#x27;&#x27;
+        Update shapes position with the given _x and _y value.
+        To be used after move or rotation is performed on the shape.
+        &#x27;&#x27;&#x27;
+        for row_n, row in enumerate(self.piece):
+            for element_n, element in enumerate(row):
+                if element is not None:
+                    start_x, start_y = self.grid[row_n][element_n]
+                    self.piece[row_n][element_n].x = start_x + self._x
+                    self.piece[row_n][element_n].y = start_y + self._y
+
+    def draw(self):
+        &#x27;&#x27;&#x27;
+        Draws all the blocks inside the shape.
+        &#x27;&#x27;&#x27;
+        for row in self.piece:
+            for element in row:
+                if element is not None:
+                    screen.draw.filled_rect(element, self.color)
+
+    def pos_rotate(self):
+        &#x27;&#x27;&#x27;
+        Rotate shape clockwise
+        &#x27;&#x27;&#x27;
+        # Transpose the list
+        transposed = [new_row for new_row in zip(*self.piece)]
+
+        # Reverse elements in each row.
+        rotated_shape = []
+        for row in transposed:
+            row = list(row)
+            reversed_row = [element for element in reversed(row)]
+            rotated_shape.append(reversed_row)
+
+        self.piece = rotated_shape
+        self.shape_grid_update()
+
+    def neg_rotate(self):
+        &#x27;&#x27;&#x27;
+        Rotate shape clockwise
+        &#x27;&#x27;&#x27;
+        # Transpose the list
+        transposed = [new_row for new_row in zip(*self.piece)]
+
+        # Reverse elements in each row.
+        rotated_shape = []
+        for row in reversed(transposed):
+            row = list(row)
+            rotated_shape.append(row)
+
+        self.piece = rotated_shape
+        self.shape_grid_update()
+
+    def move_down(self, speed):
+        &#x27;&#x27;&#x27;
+        Moves the shape downwards in the speed passed in arg speed.
+        speed is the number of pixels to move per update.
+        &#x27;&#x27;&#x27;
+        self._y += speed
+        self.shape_grid_update()
+
+    def move_up(self, speed):
+        &#x27;&#x27;&#x27;
+        Moves the shape upwards in the speed passed in arg speed.
+        speed is the number of pixels to move per update.
+        &#x27;&#x27;&#x27;
+        self._y -= speed
+        self.shape_grid_update()
+
+    def move_right(self):
+        &#x27;&#x27;&#x27;
+        Moves the shape 1 step to the right.
+        &#x27;&#x27;&#x27;
+        self._x += self.block_size
+        self.shape_grid_update()
+
+    def move_left(self):
+        &#x27;&#x27;&#x27;
+        Moves the shape 1 step to the left
+        &#x27;&#x27;&#x27;
+        self._x -= self.block_size
+        self.shape_grid_update()
+
+    def bottom(self):
+        &#x27;&#x27;&#x27;
+        Gives the bottom pos of the first block in the first row.
+        &#x27;&#x27;&#x27;
+        return self._y
+
+    def left(self):
+        &#x27;&#x27;&#x27;
+        Gives the left pos of the first block in the first row.
+        &#x27;&#x27;&#x27;
+        x_pos = []
+        for row in self.piece:
+            for element in row:
+                if element is not None:
+                    x_pos.append(element.x)
+
+        return min(x_pos)
+
+    def right(self):
+        &#x27;&#x27;&#x27;
+        Gives the right pos of the last block in the first row.
+        &#x27;&#x27;&#x27;
+        x_pos = []
+        for row in self.piece:
+            for element in row:
+                if element is not None:
+                    x_pos.append(element.x)
+
+        return max(x_pos)
+
+    def top(self):
+        &#x27;&#x27;&#x27;
+        Gives the top pos of the first block in the second row.
+        &#x27;&#x27;&#x27;
+        # second row, first block will work fine.
+        return self._y + (self.block_size * 2)
+
+    def gameboard_collision(self, gameboard):
+        &#x27;&#x27;&#x27;
+        Check if this piece have collided with any other piece on the bottom.
+        &#x27;&#x27;&#x27;
+        for row in self.piece:
+            for element in row:
+                if element is not None:
+                    if not gameboard.contains(element):
+                        if element.bottom &gt; gameboard.bottom:
+                            return True
+                        elif self.right() &gt;= gameboard.right:
+                            return True
+                        elif self.left() &lt; gameboard.left:
+                            return True
+        return False
+
+    def shape_collision(self, other_pieces):
+        &#x27;&#x27;&#x27;
+        Check if this piece have collided with any other piece on the bottom.
+        &#x27;&#x27;&#x27;
+
+        # Unexpected behaviour. As it seems the bottom check is unnecessary
+        for row in self.piece:
+            for element in row:
+                if element is not None:
+                    collisions = element.collidelistall(other_pieces)
+                    if collisions:
+                        return True
+        return False
+
+    def get_rect(self):
+        &#x27;&#x27;&#x27;
+        Returns a list of rects
+        &#x27;&#x27;&#x27;
+        rect_list = []
+        for row in self.piece:
+            for element in row:
+                if element is not None:
+                    rect_list.append(element)
+                    # rect_list.extend(row_rects)
+
+        return rect_list
+
+    def remove(self, block_list):
+        &#x27;&#x27;&#x27;
+        Compare list of bricks against piece. If any match remove the entity.
+        &#x27;&#x27;&#x27;
+        for block in block_list:
+            for row in self.piece:
+                try:
+                    row.remove(block)
+                except ValueError:
+                    # Expected for some blocks.
+                    # Not all blocks resides inside all bricks.
+                    pass
+
+    def __str__(self):
+        return str(self.piece)
+
+
+class OShape(Shape):
+    &#x27;&#x27;&#x27;
+    Shape:
+      xx
+      xx
+    &#x27;&#x27;&#x27;
+
+    def __init__(self, x_pos, size, color):
+        Shape.__init__(self, x_pos, size, color)
+        self.piece = [[None, None, None, None, None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, Rect((0, 0), (size, size)),
+                       Rect((0, 0), (size, size)), None, None],
+                      [None, None, Rect((0, 0), (size, size)),
+                       Rect((0, 0), (size, size)), None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, None, None, None, None]]
+
+        # Upate shape with set _x and _y values
+        self.shape_grid_update()
+
+    def pos_rotate(self):
+        &#x27;&#x27;&#x27;
+        Try to rotate this one to victory is futile
+        &#x27;&#x27;&#x27;
+        # This will override the method defined in the base class Shape
+        pass
+
+    def neg_rotate(self):
+        &#x27;&#x27;&#x27;
+        Try to rotate this one to victory is futile
+        &#x27;&#x27;&#x27;
+        # This will override the method defined in the base class Shape
+        pass
+
+
+class LShape(Shape):
+    &#x27;&#x27;&#x27;
+    Shape:
+      x
+      x
+      xx
+    &#x27;&#x27;&#x27;
+
+    def __init__(self, x_pos, size, color):
+        Shape.__init__(self, x_pos, size, color)
+        self.piece = [[None, None, None, None, None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None, None],
+                      [None, None, None, None, None, None]]
+
+        # Upate shape with set _x and _y values
+        self.shape_grid_update()
+
+
+class IShape(Shape):
+    &#x27;&#x27;&#x27;
+    Shape:
+      x
+      x
+      x
+      x
+    &#x27;&#x27;&#x27;
+    def __init__(self, x_pos, size, color):
+        Shape.__init__(self, x_pos, size, color)
+        self.piece = [[None, None, None, None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), None, None, None],
+                      [None, None, None, None, None, None]]
+
+        # Upate shape with set _x and _y values
+        self.shape_grid_update()
+
+
+class ZShape(Shape):
+    &#x27;&#x27;&#x27;
+    Shape:
+     xx
+      xx
+    &#x27;&#x27;&#x27;
+    def __init__(self, x_pos, size, color):
+        Shape.__init__(self, x_pos, size, color)
+        self.piece = [[None, None, None, None, None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None, None],
+                      [None, None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None],
+                      [None, None, None, None, None, None],
+                      [None, None, None, None, None, None]]
+
+        # Upate shape with set _x and _y values
+        self.shape_grid_update()
+
+
+class SShape(Shape):
+    &#x27;&#x27;&#x27;
+    Shape:
+      xx
+     xx
+    &#x27;&#x27;&#x27;
+    def __init__(self, x_pos, size, color):
+        Shape.__init__(self, x_pos, size, color)
+        self.piece = [[None, None, None, None, None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None],
+                      [None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, None, None, None, None]]
+
+        # Upate shape with set _x and _y values
+        self.shape_grid_update()
+
+
+class TShape(Shape):
+    &#x27;&#x27;&#x27;
+    Shape:
+     xxx
+      x
+    &#x27;&#x27;&#x27;
+    def __init__(self, x_pos, size, color):
+        Shape.__init__(self, x_pos, size, color)
+        self.piece = [[None, None, None, None, None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, Rect((0, 0), (size, size)),
+                       Rect((0, 0), (size, size)),
+                       Rect((0, 0), (size, size)), None],
+                      [None, None, None, Rect((0, 0), (size, size)), None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, None, None, None, None]]
+
+        # Upate shape with set _x and _y values
+        self.shape_grid_update()
+
+
+class JShape(Shape):
+    &#x27;&#x27;&#x27;
+    Shape:
+      x
+      x
+     xx
+    &#x27;&#x27;&#x27;
+    def __init__(self, x_pos, size, color):
+        Shape.__init__(self, x_pos, size, color)
+        self.piece = [[None, None, None, None, None, None],
+                      [None, None, None, None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), None, None, None],
+                      [None, None, Rect((0, 0), (size, size)), None, None, None],
+                      [None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)),
+                       None, None, None],
+                      [None, None, None, None, None, None]]
+
+        # Upate shape with set _x and _y values
+        self.shape_grid_update()
+
+
+class Bricks(object):
+    &#x27;&#x27;&#x27;
+    There is the following kind of bricks
+    1: O-shaped
+    2: L-shaped
+    3: I-shaped
+    4: Z-shaped
+    5: S-shaped
+    6: T-shaped
+    7: J-shaped
+
+    There is the following list of colors.
+    1: Red (0xFF, 0x0, 0x0)
+    2: Yellow (0xF9, 0xFF, 0x0)
+    3: Magenta (0xFF, 0x0, 0xFF)
+    4: Blue (0x42, 0x0, 0xFF)
+    5: Cyan (0x0, 0xFF, 0xFF)
+    6: Lime (0x1A, 0xFF, 0x0)
+    7: Orange (0xFF, 0xA1, 0x0)
+
+    The Brick class will function as a bridge for all the shapes
+    and as a container for bricks.
+    &#x27;&#x27;&#x27;
+    def __init__(self, block_size):
+        &#x27;&#x27;&#x27;
+        Valid data for parameter shape is:
+        1, 2, 3, 4
+        &#x27;&#x27;&#x27;
+        self.block_size = block_size
+        self.bricklist = []
+
+        # A dict with references to the constructor for each available shape.
+        self.shape_list = {1: OShape, 2: LShape, 3: IShape, 4: ZShape,
+                           5: SShape, 6: TShape, 7: JShape}
+        # A-Arcade color theme
+        self.color_palette = {1: (0xFF, 0x0, 0x0), 2: (0xF9, 0xFF, 0x0),
+                              3: (0xFF, 0x0, 0xFF), 4: (0x42, 0x0, 0xFF),
+                              5: (0x0, 0xFF, 0xFF), 6: (0x1A, 0xFF, 0x0),
+                              7: (0xFF, 0xA1, 0x0)}
+
+    def new_brick(self, shape, color, pos, size):
+        &#x27;&#x27;&#x27;
+        Adds a new brick to the list
+        &#x27;&#x27;&#x27;
+        # Check if parameter shape is valid else create the Brick piece.
+        if shape not in self.shape_list:
+            raise ValueError(&#x27;Not in shape_list: {0}&#x27;.format(shape))
+        elif color not in self.color_palette:
+            raise ValueError(&#x27;Not in color_palette: {0}&#x27;.format(color))
+        else:
+            self.bricklist.append(self.shape_list[shape](pos, size, self.color_palette[color]))
+
+    @property
+    def bottom(self):
+        &#x27;&#x27;&#x27;
+        Returns the position of the bottom.
+        &#x27;&#x27;&#x27;
+        return self.bricklist[-1].bottom()
+
+    def move_list_down(self, move_list):
+        &#x27;&#x27;&#x27;
+        Moves the list of blocks one step down.
+        &#x27;&#x27;&#x27;
+        for block in move_list:
+            block.y += self.block_size
+
+    def move_active_down(self, speed):
+        &#x27;&#x27;&#x27;
+        Move active brick down in a given speed
+        &#x27;&#x27;&#x27;
+        self.bricklist[-1].move_down(speed)
+
+    def move_active_up(self, speed):
+        &#x27;&#x27;&#x27;
+        Move active brick up with a given speed
+        &#x27;&#x27;&#x27;
+        self.bricklist[-1].move_up(speed)
+
+    def move_active_right(self):
+        &#x27;&#x27;&#x27;
+        Move brick right one step
+        &#x27;&#x27;&#x27;
+        self.bricklist[-1].move_right()
+
+    def move_active_left(self):
+        &#x27;&#x27;&#x27;
+        Move active brick left one step
+        &#x27;&#x27;&#x27;
+        self.bricklist[-1].move_left()
+
+    def pos_rotate_active(self):
+        &#x27;&#x27;&#x27;
+        Rotates active brick 90deg.
+        &#x27;&#x27;&#x27;
+        self.bricklist[-1].pos_rotate()
+
+    def neg_rotate_active(self):
+        &#x27;&#x27;&#x27;
+        Rotates active brick -90deg.
+        &#x27;&#x27;&#x27;
+        self.bricklist[-1].neg_rotate()
+
+    def draw(self):
+        &#x27;&#x27;&#x27;
+        Draw shape on to the screen
+        &#x27;&#x27;&#x27;
+        for brick in self.bricklist:
+            brick.draw()
+
+    def gameboard_collision(self, gameboard):
+        &#x27;&#x27;&#x27;
+        Check if Brick have hit gameboard bottom
+        &#x27;&#x27;&#x27;
+        return self.bricklist[-1].gameboard_collision(gameboard)
+
+    def shape_collision(self):
+        &#x27;&#x27;&#x27;
+        other_pieces is expected to be a list of type Rect
+        If piece have collided with other piece at bottom.
+        returns true.
+        &#x27;&#x27;&#x27;
+        for brick in self.bricklist[:-1]:
+            if self.bricklist[-1].shape_collision(brick.get_rect()):
+                return True
+
+        return False
+
+    def bounds_out(self, gameboard):
+        &#x27;&#x27;&#x27;
+        Returns True if any of the active brick is out side of the
+        gameboard when called.
+        Else False
+        &#x27;&#x27;&#x27;
+        block_list = self.bricklist[-1].get_rect()
+        game_rect = gameboard.get_rect()
+
+        # Check if all the blocks from the brick is inside the gameboard.
+        # If not, then return True. otherwise the function will return False
+        for block in block_list:
+            if not game_rect.contains(block):
+                return True
+
+        return False
+
+    def remove(self, block_list):
+        &#x27;&#x27;&#x27;
+        If brick contains any of the bricks in list. It will remove them
+        &#x27;&#x27;&#x27;
+        for brick in self.bricklist:
+            brick.remove(block_list)
+
+    def get_active_rect(self):
+        &#x27;&#x27;&#x27;
+        Returns rectangle objects from brick.
+        &#x27;&#x27;&#x27;
+        return self.bricklist[-1].get_rect()
+
+    def get_rect_list(self):
+        &#x27;&#x27;&#x27;
+        Helper method to compile a list of rects from a list of bricks
+        &#x27;&#x27;&#x27;
+        rect_list = []
+        for brick in self.bricklist:
+            rect_list.extend(brick.get_rect())
+        return rect_list
+
+
+class ScoreBoard(object):
+    &#x27;&#x27;&#x27;
+    Shows the game the current score
+    &#x27;&#x27;&#x27;
+    def __init__(self, pos):
+        self.title = &#x27;Score&#x27;
+        self.pos_x, self.pos_y = pos
+        self.current_score = 0
+
+    def add_to_score(self, points):
+        &#x27;&#x27;&#x27;
+        Takes points as argument and adds it to the current score
+        &#x27;&#x27;&#x27;
+        # Calculate score multiplier
+        multiplier = points / 10
+
+        # Set new score
+        self.current_score += int(points * multiplier)
+
+    def draw(self):
+        &#x27;&#x27;&#x27;
+        Draws title and current score to surface
+        &#x27;&#x27;&#x27;
+        screen.draw.text(self.title,
+                         (self.pos_x, self.pos_y),
+                         color=(0xDE, 0xAD, 0xFF),
+                         fontsize=20)
+        screen.draw.text(str(self.current_score),
+                         (self.pos_x, self.pos_y + 20),
+                         color=(0x00, 0xAD, 0xFF),
+                         fontsize=20)
+
+
+class GameBoard(object):
+    &#x27;&#x27;&#x27;
+    Implements the play area and is judge that decides what rectangles
+    that should be removed and which dead bricks that should move down.
+    &#x27;&#x27;&#x27;
+    def __init__(self, position, gameboard_size, block_size, color):
+        pos_x, pos_y = position
+        self._pos_x = pos_x
+        self._pos_y = pos_y
+        self.cols, self.rows = gameboard_size
+        self.block_size = block_size
+        width = self.cols * self.block_size
+        height = self.rows * self.block_size
+        self._board = Rect(position, (width, height))
+        self.color = color
+
+    def center(self):
+        &#x27;&#x27;&#x27;
+        Returns the centrum pos in the X axis.
+        &#x27;&#x27;&#x27;
+        center = (self._board.width / 2) + self._pos_x
+        return center
+
+    def get_rect(self):
+        &#x27;&#x27;&#x27;
+        Returns a Rect object of the GameBoard
+        &#x27;&#x27;&#x27;
+        return self._board
+
+    def draw(self):
+        &#x27;&#x27;&#x27;
+        To be called when we want it to be drawn onto the screen surface.
+        &#x27;&#x27;&#x27;
+        screen.draw.filled_rect(self._board, self.color)
+
+    def ruler(self, rects):
+        &#x27;&#x27;&#x27;
+        Takes a list of bricks. Returns a list of rects that should be removed
+        from the first row that it encounters
+        and a list of rects that should be moved down a row.
+
+        If nothing to report, it returns a tuple of (None, None)
+        &#x27;&#x27;&#x27;
+        # Get a list of every block that is available on the gameboard.
+        blocks = rects
+
+        # A complete row, is a row with the same amount of blocks
+        # as there is columns
+        complete_row = self.cols
+
+        # Create a ruler that can be used to check if a row is full of blocks.
+        ruler_rect = Rect((self._pos_x, self._board.bottom - self.block_size),
+                          (self._board.width, self.block_size))
+
+        # If a row is full, we need to figure out if there is
+        # any blocks above that row that should be moved down.
+        other_rect = Rect((self._pos_x, self._pos_y),
+                          (self._board.width, self._board.height))
+        remove_list = []
+        move_down_list = []
+
+        # Uses the ruler rect to check if all the columns in row is filled.
+        # If so, it creates a list of blocks that should be removed
+        # and a list of blocks that should be moved one row down.
+        for _ in range(0, self.rows):
+            # Area to capture rects above the row for which the ruler is at.
+            other_rect.height -= self.block_size
+
+            collision_indices = ruler_rect.collidelistall(blocks)
+            move_down_indices = other_rect.collidelistall(blocks)
+            if len(collision_indices) == complete_row:
+                for index in collision_indices:
+                    remove_list.append(blocks[index])
+                for index in move_down_indices:
+                    move_down_list.append(blocks[index])
+
+                return (remove_list, move_down_list)
+
+            # Step the ruler to next row.
+            ruler_rect.y -= self.block_size
+
+        #No full row, no blocks the be moved down.
+        return (None, None)
+
+
+class Game(object):
+    &#x27;&#x27;&#x27;
+    Game board, bricks and controls.
+    &#x27;&#x27;&#x27;
+    def __init__(self, x, y, cols, rows):
+        &#x27;&#x27;&#x27;
+        &#x27;&#x27;&#x27;
+        # Block setting
+        self.block_size = 20
+
+        self._xpos = x
+        self._ypos = y
+        self._cols = cols
+        self._rows = rows
+
+        self.width = cols * self.block_size
+        self.height = rows * self.block_size
+        self.gameboard = GameBoard((x, y), (cols, rows), self.block_size, (0x00, 0x00, 0x00))
+
+        # Scoreboard
+        margin = 10
+        self.scoreboard = ScoreBoard((self._xpos + self.width + margin,
+                                      self._ypos))
+
+        # Contains a list of previously active bricks.
+        self.bricks = Bricks(self.block_size)
+        # Speed affects all moving objects, such as the active_brick
+        self.speed = 1
+
+        # A lock that will be False once the game hits the state of game over.
+        self.game_active = True
+        self.game_pause = False
+
+        self.new_brick()
+
+    def new_brick(self):
+        &#x27;&#x27;&#x27;
+        Creates a new brick when previous get locked in place
+        &#x27;&#x27;&#x27;
+        self.bricks.new_brick(random.randint(1, 7),
+                              random.randint(1, 7),
+                              self.gameboard.center(),
+                              self.block_size)
+
+    def draw(self):
+        &#x27;&#x27;&#x27;
+        Draw game
+        &#x27;&#x27;&#x27;
+        self.gameboard.draw()
+        self.bricks.draw()
+        self.scoreboard.draw()
+
+        if not self.game_active:
+            screen.draw.text(&#x27;Game Over&#x27;, (40, 100), color=(0xDE, 0xAD, 0xFF), fontsize=80)
+
+    def remove_complete_rows(self):
+        &#x27;&#x27;&#x27;
+        For every complete row, request to remove it.
+        The request is sent to each brick in the game.
+        &#x27;&#x27;&#x27;
+        points = 0
+        # Check if row/rows became complete
+        while True:
+            remove_list, move_list = self.gameboard.ruler(self.bricks.get_rect_list())
+            if remove_list:
+                self.bricks.remove(remove_list)
+                points += len(remove_list)
+
+            if move_list:
+                self.bricks.move_list_down(move_list)
+
+            else:
+                break
+
+        # Add points to scoreboard
+        self.scoreboard.add_to_score(points)
+
+    def toggle_pause(self):
+        &#x27;&#x27;&#x27;
+        Pause/Un-pause the game
+        &#x27;&#x27;&#x27;
+        self.game_pause = not self.game_pause
+
+    def proceed(self):
+        &#x27;&#x27;&#x27;
+        Is called to change the state of the game.
+        &#x27;&#x27;&#x27;
+        # Is brick active, if not, kill it and create a new one.
+        if self.found_collision():
+            self.bricks.move_active_up(self.speed)
+            self.remove_complete_rows()
+            # Game over if brick is outside
+            if self.bricks.bounds_out(self.gameboard):
+                # Draw game over to the screen and raise GameOver
+                self.game_active = False
+                raise GameOver
+            else:
+                self.new_brick()
+
+        else:
+            self.bricks.move_active_down(self.speed)
+
+    def found_collision(self):
+        &#x27;&#x27;&#x27;
+        Check if active brick have collided with anything.
+        &#x27;&#x27;&#x27;
+        if self.bricks.gameboard_collision(self.gameboard.get_rect()):
+            return True
+        elif self.bricks.shape_collision():
+            return True
+        else:
+            return False
+
+    def controls(self, direction):
+        &#x27;&#x27;&#x27;
+        Will be called for a given intervall. This prevents the blocks from
+        flying from left to right in high speed
+        &#x27;&#x27;&#x27;
+
+        # Check if user want to move brick side ways.
+        if direction == &#x27;right&#x27;:
+            self.bricks.move_active_right()
+        elif direction == &#x27;left&#x27;:
+            self.bricks.move_active_left()
+        elif direction == &#x27;down&#x27;:
+            self.bricks.move_active_down(self.speed * 10)
+        elif direction == &#x27;pos_rotate&#x27;:
+            self.bricks.pos_rotate_active()
+        elif direction == &#x27;neg_rotate&#x27;:
+            self.bricks.neg_rotate_active()
+
+        # Damage control after collision
+        if self.found_collision():
+            if direction == &#x27;right&#x27;:
+                self.bricks.move_active_left()
+            elif direction == &#x27;left&#x27;:
+                self.bricks.move_active_right()
+            elif direction == &#x27;down&#x27;:
+                self.bricks.move_active_up(self.speed * 10)
+            elif direction == &#x27;pos_rotate&#x27;:
+                self.bricks.neg_rotate_active()
+            elif direction == &#x27;neg_rotate&#x27;:
+                self.bricks.pos_rotate_active()
+
+    def reset(self):
+        &#x27;&#x27;&#x27;
+        Restarts the game
+        &#x27;&#x27;&#x27;
+        Game.__init__(self, self._xpos, self._ypos, self._cols, self._rows)
+
+
+WIDTH = 500
+HEIGHT = 800
+
+music.set_volume(0.5)
+music.play(&#x27;hhavok-main&#x27;)
+
+# Create a gamecontroller and a gameboard with a width and a height
+# Width and height is given in columns and rows.
+TETRA_PUZZLE = Game(100, 50, 10, 20)
+
+# Global that keeps track on wheen to increase the speed on
+# right and left movement
+SPEEDOMETER_LEFT = 0
+SPEEDOMETER_RIGHT = 0
+
+def control_tick():
+    &#x27;&#x27;&#x27;
+    Gets triggerad by clock.
+    Tells the game betris what the user want to do, if any.
+    &#x27;&#x27;&#x27;
+    global SPEEDOMETER_RIGHT
+    global SPEEDOMETER_LEFT
+
+    if TETRA_PUZZLE.game_active:
+        if keyboard.space:
+            TETRA_PUZZLE.controls(&#x27;down&#x27;)
+        elif keyboard.right:
+            if SPEEDOMETER_LEFT:
+                SPEEDOMETER_LEFT = 0
+            SPEEDOMETER_RIGHT += 0.01
+            TETRA_PUZZLE.controls(&#x27;right&#x27;)
+        elif keyboard.left:
+            if SPEEDOMETER_RIGHT:
+                SPEEDOMETER_RIGHT = 0
+            SPEEDOMETER_LEFT += 0.01
+            TETRA_PUZZLE.controls(&#x27;left&#x27;)
+
+def on_key_down(key):
+    # if key is keys.RIGHT:
+        # TETRA_PUZZLE.controls(&#x27;right&#x27;)
+    # elif key is keys.LEFT:
+        # TETRA_PUZZLE.controls(&#x27;left&#x27;)
+    if key is keys.R:
+        TETRA_PUZZLE.reset()
+    elif key is keys.P:
+        TETRA_PUZZLE.toggle_pause()
+    elif key is keys.UP:
+        TETRA_PUZZLE.controls(&#x27;pos_rotate&#x27;)
+    elif key is keys.DOWN:
+        TETRA_PUZZLE.controls(&#x27;neg_rotate&#x27;)
+
+
+# Setup time between each check of user controls.
+clock.schedule_interval(control_tick, (0.05 - SPEEDOMETER_RIGHT) - SPEEDOMETER_LEFT)
+
+def update():
+    &#x27;&#x27;&#x27;
+    Update block position.
+    &#x27;&#x27;&#x27;
+    if TETRA_PUZZLE.game_active and not TETRA_PUZZLE.game_pause:
+        try:
+            TETRA_PUZZLE.proceed()
+        except GameOver:
+            draw()
+
+def draw():
+    &#x27;&#x27;&#x27;
+    Draw game
+    &#x27;&#x27;&#x27;
+    screen.fill((0xFF, 0xFF, 0xFF))
+    TETRA_PUZZLE.draw()
+</code></pre>
+</main>
+
+<script>
+/*
+ * Generates a gridlist used shape class
+ */
+function grid_list(block_size) {
+  let grids = [], row;
+  for (let y = -5; y < 1; y++) {
+    row = [];
+    for (let x = 0; x < 6; x++) {
+      row.push([x * block_size, y * block_size]);
+    }
+    grids.push(row);
+  }
+
+  return grids;
+}
+
+/*
+ * This will make the foundation for a Shape that the others shapes
+ * will inherit.
+ */
+class Shape {
+  static transpose() {
+    let lists = [],
+        length = 0,
+        result = [],
+        row;
+    for (let argument of arguments) {
+      lists.push(argument.slice());
+      length = Math.max(length, argument.length);
+    }
+    for (let i = 0; i < length; i++) {
+      row = [];
+      for (let list of lists) {
+        if (list.length > 0) {
+          row.push(list.shift());
+        }
+      }
+      result.push(row);
+    }
+    return result;
+  }
+
+  /*
+   * Inits the shape to start at y_pos and every block is of size in size.
+   * OShape consists of 4 blocks, each block is size wide and high.
+   */
+  constructor(x_pos, size, color) {
+    // the widths and heights is determined by the shape and block size.
+    this.block_size = size;
+    this._width = size;
+    this._height = size;
+
+    // Rows of blocks.
+    // _block_init() sets allocates all the rectangles and resets the shape
+    // to start position.
+    this._x = x_pos - (this.block_size * 3);
+    this._y = 0;
+    this.piece = [];
+
+    this.grid = grid_list(this.block_size);
+
+    this.color = color;
+  }
+
+  /*
+   * Update shapes position with the given _x and _y value.
+   * To be used after move or rotation is performed on the shape.
+   */
+  shape_grid_update() {
+    let row_n = 0, element_n, start_x, start_y;
+    for (let row of this.piece) {
+      element_n = 0;
+      for (let element of row) {
+        if (element instanceof Rect) {
+          [start_x=0, start_y=0] = this.grid[row_n][element_n];
+          this.piece[row_n][element_n].x = start_x + this._x;
+          this.piece[row_n][element_n].y = start_y + this._y;
+        }
+        element_n++;
+      }
+      row_n++;
+    }
+  }
+
+  /*
+   * Draws all the blocks inside the shape.
+   */
+  draw() {
+    for (let row of this.piece) {
+      for (let element of row) {
+        if (element instanceof Rect) {
+          screen.draw.filled_rect(element, this.color);
+        }
+      }
+    }
+  }
+
+  /*
+   * Rotate shape clockwise
+   */
+  pos_rotate() {
+    // Transpose the list
+    let rotated_shape = Shape.transpose(...this.piece);
+
+    // Reverse elements in each row.
+    for (let row of rotated_shape) {
+      row.reverse();
+    }
+
+    this.piece = rotated_shape;
+    this.shape_grid_update();
+  }
+
+  /*
+   * Rotate shape clockwise
+   */
+  neg_rotate() {
+    // Transpose the list
+    let rotated_shape = Shape.transpose(...this.piece);
+    rotated_shape.reverse();
+    this.piece = rotated_shape;
+    this.shape_grid_update();
+  }
+
+  /*
+   * Moves the shape downwards in the speed passed in arg speed.
+   * speed is the number of pixels to move per update.
+   */
+  move_down(speed) {
+    this._y += speed;
+    this.shape_grid_update();
+  }
+
+  /*
+   * Moves the shape upwards in the speed passed in arg speed.
+   * speed is the number of pixels to move per update.
+   */
+  move_up(speed) {
+    this._y -= speed;
+    this.shape_grid_update();
+  }
+
+  /*
+   * Moves the shape 1 step to the right.
+   */
+  move_right() {
+    this._x += this.block_size;
+    this.shape_grid_update();
+  }
+
+  /*
+   * Moves the shape 1 step to the left
+   */
+  move_left() {
+    this._x -= this.block_size;
+    this.shape_grid_update();
+  }
+
+  /*
+   * Gives the bottom pos of the first block in the first row.
+   */
+  bottom() {
+    return this._y;
+  }
+
+  /*
+   * Gives the left pos of the first block in the first row.
+   */
+  left() {
+    let x_pos = [];
+    for (let row of this.piece) {
+      for (let element of row) {
+        if (element instanceof Rect) {
+          x_pos.push(element.x);
+        }
+      }
+    }
+    return Math.min(...x_pos);
+  }
+
+  /*
+   * Gives the right pos of the last block in the first row.
+   */
+  right() {
+    let x_pos = [];
+    for (let row of this.piece) {
+      for (let element of row) {
+        if (element instanceof Rect) {
+          x_pos.push(element.x);
+        }
+      }
+    }
+    return Math.max(...x_pos);
+  }
+
+  /*
+   * Gives the top pos of the first block in the second row.
+   */
+  top() {
+    // second row, first block will work fine.
+    return this._y + (this.block_size * 2);
+  }
+
+  /*
+   * Check if this piece have collided with any other piece on the bottom.
+   */
+  gameboard_collision(gameboard) {
+    for (let row of this.piece) {
+      for (let element of row) {
+        if (element instanceof Rect) {
+          if (!gameboard.contains(element)) {
+            if (element.bottom > gameboard.bottom) {
+              return true;
+            }
+            else if (this.right() >= gameboard.right) {
+              return true;
+            }
+            else if (this.left() < gameboard.left) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /*
+   * Check if this piece have collided with any other piece on the bottom.
+   */
+  shape_collision(other_pieces) {
+    // Unexpected behaviour. As it seems the bottom check is unnecessary
+    let collisions;
+    for (let row of this.piece) {
+      for (let element of row) {
+        if (element instanceof Rect) {
+          collisions = element.collidelistall(other_pieces);
+          if (collisions.length > 0) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /*
+   * Returns a list of rects
+   */
+  get_rect() {
+    let rect_list = [];
+    for (let row of this.piece) {
+      for (let element of row) {
+        if (element instanceof Rect) {
+          rect_list.push(element);
+        }
+      }
+    }
+    return rect_list;
+  }
+
+  /*
+   * Compare list of bricks against piece. If any match remove the entity.
+   */
+  remove(block_list) {
+    let i, found;
+    for (let block of block_list) {
+      for (let row of this.piece) {
+        i = 0;
+        found = false;
+        for (let element of row.slice()) {
+          if (element instanceof Rect) {
+            if ((block.x === element.x) &&
+                (block.y === element.y) &&
+                (block.width === element.width) &&
+                (block.height === element.height)) {
+              row.splice(i, 1);
+              found = true;
+              break;
+            }
+          }
+          i++;
+        }
+        if (found) {
+          break;
+        }
+      }
+    }
+  }
+}
+
+/*
+ * Shape:
+ *   xx
+ *   xx
+ */
+class OShape extends Shape {
+  constructor(x_pos, size, color) {
+    super(x_pos, size, color);
+    this.piece = [[null, null, null, null, null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), null, null],
+                  [null, null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, null, null, null, null]];
+
+    // Upate shape with set _x and _y values
+    this.shape_grid_update();
+  }
+
+  /*
+   * Try to rotate this one to victory is futile
+   */
+  pos_rotate() {
+    // This will override the method defined in the base class Shape
+  }
+
+  /*
+   * Try to rotate this one to victory is futile
+   */
+  neg_rotate() {
+    // This will override the method defined in the base class Shape
+  }
+}
+
+/*
+ * Shape:
+ *   x
+ *   x
+ *   xx
+ */
+class LShape extends Shape {
+  constructor(x_pos, size, color) {
+    super(x_pos, size, color);
+    this.piece = [[null, null, null, null, null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, new Rect(0, 0, size, size), null, null, null],
+                  [null, null, new Rect(0, 0, size, size), null, null, null],
+                  [null, null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), null, null],
+                  [null, null, null, null, null, null]];
+
+    // Upate shape with set _x and _y values
+    this.shape_grid_update();
+  }
+}
+
+/*
+ * Shape:
+ *   x
+ *   x
+ *   x
+ *   x
+ */
+class IShape extends Shape {
+  constructor(x_pos, size, color) {
+    super(x_pos, size, color);
+    this.piece = [[null, null, null, null, null, null],
+                  [null, null, new Rect(0, 0, size, size), null, null, null],
+                  [null, null, new Rect(0, 0, size, size), null, null, null],
+                  [null, null, new Rect(0, 0, size, size), null, null, null],
+                  [null, null, new Rect(0, 0, size, size), null, null, null],
+                  [null, null, null, null, null, null]];
+
+    // Upate shape with set _x and _y values
+    this.shape_grid_update();
+  }
+}
+
+/*
+ * Shape:
+ *  xx
+ *   xx
+ */
+class ZShape extends Shape {
+  constructor(x_pos, size, color) {
+    super(x_pos, size, color);
+    this.piece = [[null, null, null, null, null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), null, null],
+                  [null, null, null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), null],
+                  [null, null, null, null, null, null],
+                  [null, null, null, null, null, null]];
+
+    // Upate shape with set _x and _y values
+    this.shape_grid_update();
+  }
+}
+
+/*
+ * Shape:
+ *   xx
+ *  xx
+ */
+class SShape extends Shape {
+  constructor(x_pos, size, color) {
+    super(x_pos, size, color);
+    this.piece = [[null, null, null, null, null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), null],
+                  [null, null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, null, null, null, null]];
+
+    // Upate shape with set _x and _y values
+    this.shape_grid_update();
+  }
+}
+
+/*
+ * Shape:
+ *  xxx
+ *   x
+ */
+class TShape extends Shape {
+  constructor(x_pos, size, color) {
+    super(x_pos, size, color);
+    this.piece = [[null, null, null, null, null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), new Rect(0, 0, size, size), null],
+                  [null, null, null, new Rect(0, 0, size, size), null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, null, null, null, null]];
+
+    // Upate shape with set _x and _y values
+    this.shape_grid_update();
+  }
+}
+
+/*
+ * Shape:
+ *   x
+ *   x
+ *  xx
+ */
+class JShape extends Shape {
+  constructor(x_pos, size, color) {
+    super(x_pos, size, color);
+    this.piece = [[null, null, null, null, null, null],
+                  [null, null, null, null, null, null],
+                  [null, null, new Rect(0, 0, size, size), null, null, null],
+                  [null, null, new Rect(0, 0, size, size), null, null, null],
+                  [null, new Rect(0, 0, size, size), new Rect(0, 0, size, size), null, null, null],
+                  [null, null, null, null, null, null]];
+
+    // Upate shape with set _x and _y values
+    this.shape_grid_update();
+  }
+}
+
+/*
+ * There is the following kind of bricks
+ * 1: O-shaped
+ * 2: L-shaped
+ * 3: I-shaped
+ * 4: Z-shaped
+ * 5: S-shaped
+ * 6: T-shaped
+ * 7: J-shaped
+ *
+ * There is the following list of colors.
+ * 1: Red (0xFF, 0x0, 0x0)
+ * 2: Yellow (0xF9, 0xFF, 0x0)
+ * 3: Magenta (0xFF, 0x0, 0xFF)
+ * 4: Blue (0x42, 0x0, 0xFF)
+ * 5: Cyan (0x0, 0xFF, 0xFF)
+ * 6: Lime (0x1A, 0xFF, 0x0)
+ * 7: Orange (0xFF, 0xA1, 0x0)
+ *
+ * The Brick class will function as a bridge for all the shapes
+ * and as a container for bricks.
+ */
+class Bricks {
+  // An Array with references to the constructor for each available shape.
+  static SHAPES = [null, OShape, LShape, IShape, ZShape, SShape, TShape, JShape];
+
+  // A-Arcade color theme
+  static COLORS = [null,
+                   [0xFF, 0x0, 0x0],
+                   [0xF9, 0xFF, 0x0],
+                   [0xFF, 0x0, 0xFF],
+                   [0x42, 0x0, 0xFF],
+                   [0x0, 0xFF, 0xFF],
+                   [0x1A, 0xFF, 0x0],
+                   [0xFF, 0xA1, 0x0]];
+
+  /*
+   * Valid data for parameter shape is:
+   * 1, 2, 3, 4
+   */
+  constructor(block_size) {
+    this.block_size = block_size;
+    this.bricklist = [];
+  }
+
+  /*
+   * Adds a new brick to the list
+   */
+  new_brick(shape, color, pos, size) {
+    // Check if parameter shape is valid else create the Brick piece.
+    if ((shape <= 0) || (Bricks.SHAPES.length <= shape)) {
+      throw new Error(`Not in shape_list: ${ shape }`);
+    }
+    else if ((color <= 0) || (Bricks.COLORS.length <= color)) {
+      throw new Error(`Not in color_palette: ${ color }`);
+    }
+    else {
+      this.bricklist.push(new Bricks.SHAPES[shape](pos, size, Bricks.COLORS[color]));
+    }
+  }
+
+  /*
+   * Returns the position of the bottom.
+   */
+  get bottom() {
+    return this.bricklist[this.bricklist.length-1].bottom();
+  }
+
+  /*
+   * Moves the list of blocks one step down.
+   */
+  move_list_down(move_list) {
+    for (let block of move_list) {
+      block.y += this.block_size;
+    }
+  }
+
+  /*
+   * Move active brick down in a given speed
+   */
+  move_active_down(speed) {
+    this.bricklist[this.bricklist.length-1].move_down(speed);
+  }
+
+  /*
+   * Move active brick up with a given speed
+   */
+  move_active_up(speed) {
+    this.bricklist[this.bricklist.length-1].move_up(speed);
+  }
+
+  /*
+   * Move brick right one step
+   */
+  move_active_right() {
+    this.bricklist[this.bricklist.length-1].move_right();
+  }
+
+  /*
+   * Move active brick left one step
+   */
+  move_active_left() {
+    this.bricklist[this.bricklist.length-1].move_left();
+  }
+
+  /*
+   * Rotates active brick 90deg.
+   */
+  pos_rotate_active() {
+    this.bricklist[this.bricklist.length-1].pos_rotate();
+  }
+
+  /*
+   * Rotates active brick -90deg.
+   */
+  neg_rotate_active() {
+    this.bricklist[this.bricklist.length-1].neg_rotate();
+  }
+
+  /*
+   * Draw shape on to the screen
+   */
+  draw() {
+    for (let brick of this.bricklist) {
+      brick.draw();
+    }
+  }
+
+  /*
+   * Check if Brick have hit gameboard bottom
+   */
+  gameboard_collision(gameboard) {
+    return this.bricklist[this.bricklist.length-1].gameboard_collision(gameboard);
+  }
+
+  /*
+   * other_pieces is expected to be a list of type Rect
+   * If piece have collided with other piece at bottom.
+   * returns true.
+   */
+  shape_collision() {
+    let i = 0;
+    for (let brick of this.bricklist) {
+      if (i >= (this.bricklist.length - 1)) {
+        break;
+      }
+      if (this.bricklist[this.bricklist.length-1].shape_collision(brick.get_rect())) {
+        return true;
+      }
+      i++;
+    }
+    return false;
+  }
+
+  /*
+   * Returns True if any of the active brick is out side of the
+   * gameboard when called.
+   * Else False
+   */
+  bounds_out(gameboard) {
+    let block_list = this.bricklist[this.bricklist.length-1].get_rect(),
+        game_rect = gameboard.get_rect();
+    // Check if all the blocks from the brick is inside the gameboard.
+    // If not, then return True. otherwise the function will return False
+    for (let block of block_list) {
+      if (!game_rect.contains(block)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /*
+   * If brick contains any of the bricks in list. It will remove them
+   */
+  remove(block_list) {
+    for (let brick of this.bricklist) {
+      brick.remove(block_list);
+    }
+  }
+
+  /*
+   * Returns rectangle objects from brick.
+   */
+  get_active_rect() {
+    return this.bricklist[this.bricklist.length-1].get_rect();
+  }
+
+  /*
+   * Helper method to compile a list of rects from a list of bricks
+   */
+  get_rect_list() {
+    let rect_list = [];
+    for (let brick of this.bricklist) {
+      rect_list = rect_list.concat(brick.get_rect());
+    }
+    return rect_list;
+  }
+}
+
+/*
+ * Shows the game the current score
+ */
+class ScoreBoard {
+  constructor(pos) {
+    let [x=0, y=0] = pos;
+    this.title = 'Score';
+    this.pos_x = x;
+    this.pos_y = y;
+    this.current_score = 0;
+  }
+
+  /*
+   * Takes points as argument and adds it to the current score
+   */
+  add_to_score(points) {
+    // Calculate score multiplier
+    let multiplier = points / 10;
+
+    // Set new score
+    this.current_score += Math.trunc(points * multiplier);
+  }
+
+  /*
+   * Draws title and current score to surface
+   */
+  draw() {
+    screen.draw.text(this.title, {
+      pos: [this.pos_x, this.pos_y],
+      color: [0xDE, 0xAD, 0xFF],
+      fontsize: 20
+    });
+    screen.draw.text(this.current_score.toFixed(0), {
+      pos: [this.pos_x, this.pos_y + 20],
+      color: [0x00, 0xAD, 0xFF],
+      fontsize: 20
+    });
+  }
+}
+
+/*
+ * Implements the play area and is judge that decides what rectangles
+ * that should be removed and which dead bricks that should move down.
+ */
+class GameBoard {
+  constructor(position, gameboard_size, block_size, color) {
+    let [x=0, y=0] = position,
+        [cols=0, rows=0] = gameboard_size;
+    this._pos_x = x;
+    this._pos_y = y;
+    this.cols = cols;
+    this.rows = rows;
+    this.block_size = block_size;
+    this._board = new Rect(position, [this.cols * this.block_size, this.rows * this.block_size]);
+    this.color = color;
+  }
+
+  /*
+   * Returns the centrum pos in the X axis.
+   */
+  center() {
+    return ((this._board.width / 2) + this._pos_x);
+  }
+
+  /*
+   * Returns a Rect object of the GameBoard
+   */
+  get_rect() {
+    return this._board;
+  }
+
+  /*
+   * To be called when we want it to be drawn onto the screen surface.
+   */
+  draw() {
+    screen.draw.filled_rect(this._board, this.color);
+  }
+
+  /*
+   * Takes a list of bricks. Returns a list of rects that should be removed
+   * from the first row that it encounters
+   * and a list of rects that should be moved down a row.
+   *
+   * If nothing to report, it returns a tuple of (None, None)
+   */
+  ruler(rects) {
+    // Get a list of every block that is available on the gameboard.
+    let blocks = rects,
+    // A complete row, is a row with the same amount of blocks
+    // as there is columns
+        complete_row = this.cols,
+    // Create a ruler that can be used to check if a row is full of blocks.
+        ruler_rect = new Rect([this._pos_x, this._board.bottom - this.block_size],
+                              [this._board.width, this.block_size]),
+    // If a row is full, we need to figure out if there is
+    // any blocks above that row that should be moved down.
+        other_rect = new Rect([this._pos_x, this._pos_y],
+                              [this._board.width, this._board.height]),
+        remove_list = [],
+        move_down_list = [],
+        collision_indices = [],
+        move_down_indices = [];
+
+    // Uses the ruler rect to check if all the columns in row is filled.
+    // If so, it creates a list of blocks that should be removed
+    // and a list of blocks that should be moved one row down.
+    for (let i = 0; i < this.rows; i++) {
+      // Area to capture rects above the row for which the ruler is at.
+      other_rect.height -= this.block_size;
+
+      collision_indices = ruler_rect.collidelistall(blocks);
+      move_down_indices = other_rect.collidelistall(blocks);
+      if (collision_indices.length === complete_row) {
+        for (let index of collision_indices) {
+          remove_list.push(blocks[index]);
+        }
+        for (let index of move_down_indices) {
+          move_down_list.push(blocks[index]);
+        }
+
+        return [remove_list, move_down_list];
+      }
+
+      // Step the ruler to next row.
+      ruler_rect.y -= this.block_size;
+    }
+
+    //No full row, no blocks the be moved down.
+    return [[], []];
+  }
+}
+
+/*
+ * Game board, bricks and controls.
+ */
+class Game {
+  /*
+   * Return a random integer N such that min <= N < max.
+   */
+  static getRandomInteger(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor((Math.random() * (max - min)) + min);
+  }
+
+  constructor(x, y, cols, rows) {
+    // Block setting
+    this.block_size = 20;
+
+    this._xpos = x;
+    this._ypos = y;
+    this._cols = cols;
+    this._rows = rows;
+
+    this.width = cols * this.block_size;
+    this.height = rows * this.block_size;
+    this.gameboard = new GameBoard([x, y], [cols, rows], this.block_size, [0x00, 0x00, 0x00]);
+
+    // Scoreboard
+    this.scoreboard = new ScoreBoard([this._xpos + this.width + 10, this._ypos]);
+
+    // Contains a list of previously active bricks.
+    this.bricks = new Bricks(this.block_size);
+    // Speed affects all moving objects, such as the active_brick
+    this.speed = 1;
+
+    // A lock that will be False once the game hits the state of game over.
+    this.game_active = true;
+    this.game_pause = false;
+
+    this.new_brick();
+  }
+
+  /*
+   * Creates a new brick when previous get locked in place
+   */
+  new_brick() {
+    this.bricks.new_brick(Game.getRandomInteger(1, 8),
+                          Game.getRandomInteger(1, 8),
+                          this.gameboard.center(),
+                          this.block_size);
+  }
+
+  /*
+   * Draw game
+   */
+  draw() {
+    this.gameboard.draw();
+    this.bricks.draw();
+    this.scoreboard.draw();
+
+    if (!this.game_active) {
+      screen.draw.text('Game Over', {
+        pos: [40, 100],
+        color: [0xDE, 0xAD, 0xFF],
+        fontsize: 80
+      });
+    }
+  }
+
+  /*
+   * For every complete row, request to remove it.
+   * The request is sent to each brick in the game.
+   */
+  remove_complete_rows() {
+    let points = 0,
+        result;
+    // Check if row/rows became complete
+    while (true) {
+      result = this.gameboard.ruler(this.bricks.get_rect_list());
+      if (result[0].length > 0) {
+        this.bricks.remove(result[0]);
+        points += result[0].length;
+      }
+      if (result[1].length > 0) {
+        this.bricks.move_list_down(result[1]);
+      }
+      else {
+        break;
+      }
+    }
+
+    // Add points to scoreboard
+    this.scoreboard.add_to_score(points);
+  }
+
+  /*
+   * Pause/Un-pause the game
+   */
+  toggle_pause() {
+    this.game_pause = !this.game_pause;
+  }
+
+  /*
+   * Is called to change the state of the game.
+   */
+  proceed() {
+    // Is brick active, if not, kill it and create a new one.
+    if (this.found_collision()) {
+      this.bricks.move_active_up(this.speed);
+      this.remove_complete_rows();
+      // Game over if brick is outside
+      if (this.bricks.bounds_out(this.gameboard)) {
+        // Draw game over to the screen and raise GameOver
+        this.game_active = false;
+        return false;
+      }
+      else {
+        this.new_brick();
+      }
+    }
+    else {
+      this.bricks.move_active_down(this.speed);
+    }
+
+    return true;
+  }
+
+  /*
+   * Check if active brick have collided with anything.
+   */
+  found_collision() {
+    if (this.bricks.gameboard_collision(this.gameboard.get_rect())) {
+      return true;
+    }
+    else if (this.bricks.shape_collision()) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+  /*
+   * Will be called for a given intervall. This prevents the blocks from
+   * flying from left to right in high speed
+   */
+  controls(direction) {
+    // Check if user want to move brick side ways.
+    if (direction === 'right') {
+      this.bricks.move_active_right();
+    }
+    else if (direction === 'left') {
+      this.bricks.move_active_left();
+    }
+    else if (direction === 'down') {
+      this.bricks.move_active_down(this.speed * 10);
+    }
+    else if (direction === 'pos_rotate') {
+      this.bricks.pos_rotate_active();
+    }
+    else if (direction === 'neg_rotate') {
+      this.bricks.neg_rotate_active();
+    }
+
+    // Damage control after collision
+    if (this.found_collision()) {
+      if (direction === 'right') {
+        this.bricks.move_active_left();
+      }
+      else if (direction === 'left') {
+        this.bricks.move_active_right();
+      }
+      else if (direction === 'down') {
+        this.bricks.move_active_up(this.speed * 10);
+      }
+      else if (direction === 'pos_rotate') {
+        this.bricks.neg_rotate_active();
+      }
+      else if (direction === 'neg_rotate') {
+        this.bricks.pos_rotate_active();
+      }
+    }
+  }
+}
+
+WIDTH = 500;
+HEIGHT = 800;
+
+// Create a gamecontroller and a gameboard with a width and a height
+// Width and height is given in columns and rows.
+var TETRA_PUZZLE;
+
+// Global that keeps track on wheen to increase the speed on
+// right and left movement
+var SPEEDOMETER_LEFT, SPEEDOMETER_RIGHT;
+
+/*
+ * Gets triggerad by clock.
+ * Tells the game betris what the user want to do, if any.
+ */
+function control_tick() {
+  if (TETRA_PUZZLE.game_active) {
+    if (keyboard[keys.SPACE]) {
+      TETRA_PUZZLE.controls('down');
+    }
+    else if (keyboard[keys.RIGHT]) {
+      if (SPEEDOMETER_LEFT > 0) {
+        SPEEDOMETER_LEFT = 0;
+      }
+      SPEEDOMETER_RIGHT += 0.01;
+      TETRA_PUZZLE.controls('right');
+    }
+    else if (keyboard[keys.LEFT]) {
+      if (SPEEDOMETER_RIGHT > 0) {
+        SPEEDOMETER_RIGHT = 0;
+      }
+      SPEEDOMETER_LEFT += 0.01;
+      TETRA_PUZZLE.controls('left');
+    }
+  }
+}
+
+function on_key_down(key) {
+  if (key === keys.R) {
+    TETRA_PUZZLE = new Game(TETRA_PUZZLE._xpos, TETRA_PUZZLE._ypos, TETRA_PUZZLE._cols, TETRA_PUZZLE._rows);
+  }
+  else if (key === keys.P) {
+    TETRA_PUZZLE.toggle_pause();
+  }
+  else if (key === keys.UP) {
+    TETRA_PUZZLE.controls('pos_rotate');
+  }
+  else if (key === keys.DOWN) {
+    TETRA_PUZZLE.controls('neg_rotate');
+  }
+}
+
+/*
+ * Update block position.
+ */
+function update() {
+  if (TETRA_PUZZLE.game_active && (!TETRA_PUZZLE.game_pause)) {
+    if (!TETRA_PUZZLE.proceed()) {
+      draw();
+    }
+  }
+}
+
+/*
+ * Draw game
+ */
+function draw() {
+  screen.fill([0xFF, 0xFF, 0xFF]);
+  TETRA_PUZZLE.draw();
+}
+
+function reset() {
+  music.set_volume(0.5);
+  music.play('hhavok_main');
+
+  TETRA_PUZZLE = new Game(100, 50, 10, 20);
+  SPEEDOMETER_LEFT = 0;
+  SPEEDOMETER_RIGHT = 0;
+
+  // Setup time between each check of user controls.
+  clock.schedule_interval(control_tick, (0.05 - SPEEDOMETER_RIGHT) - SPEEDOMETER_LEFT);
+}
+
+window.addEventListener('load', (event) => {
+  music.LOAD('#musicLoader audio');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
