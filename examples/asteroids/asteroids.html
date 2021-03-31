@@ -289,6 +289,18 @@ HEIGHT = 600;
 const MAX_DISTANCE = Math.min(WIDTH, HEIGHT) * 0.95;
 
 /*
+ * Return the result of the modulo operation dividend modulo divisor.
+ *
+ * The remainder operator (%) in JavaScript always takes the sign of the dividend.
+ * This trips you up when you come from Python and expect it to be a
+ * modulo operator for a negative dividend.
+ * This function correctly returns the non-negative remainder like Python.
+ */
+function modulo(dividend, divisor) {
+  return (((dividend % divisor) + divisor) % divisor);
+}
+
+/*
  * Return a random number N such that min <= N < max.
  */
 function getRandom(min, max) {
@@ -308,6 +320,8 @@ function getRandomInteger(min, max) {
  * A JavaScript 2-Dimensional vector based on pygame.math.Vector2.
  */
 class Vecta {
+  static TAU = Math.PI * 2;
+
   /*
    * Return true if the Numbers first and second are equal to places.
    *
@@ -451,10 +465,8 @@ class Vecta {
    * Rotate this vector by the given angle in radians.
    */
   rotate_ip_rad(radians) {
-    radians = radians % (Math.PI * 2);
-    if (radians < 0) {
-      radians += Math.PI * 2;
-    }
+    // Duplicate the code in modulo() so this class does not depend on the function
+    radians = ((radians % Vecta.TAU) + Vecta.TAU) % Vecta.TAU;
     if (Vecta.isAlmostEqual(radians, 0)) {
       return;
     }
@@ -713,18 +725,8 @@ class Player extends Actor {
       this.velocity = this.velocity.multiply(0.99);
     }
     this.exact_pos = this.exact_pos.subtract(this.velocity);
-    /*
-     * JavaScript % always takes the sign of the dividend
-     * so we add the divisor to ensure the dividend is positive.
-     */
-    while (this.exact_pos.x < 0) {
-      this.exact_pos.x += boundX;
-    }
-    this.exact_pos.x = this.exact_pos.x % boundX;
-    while (this.exact_pos.y < 0) {
-      this.exact_pos.y += boundY;
-    }
-    this.exact_pos.y = this.exact_pos.y % boundY;
+    this.exact_pos.x = modulo(this.exact_pos.x, boundX);
+    this.exact_pos.y = modulo(this.exact_pos.y, boundY);
     this.pos = [this.exact_pos.x, this.exact_pos.y];
   }
 
@@ -762,18 +764,8 @@ class Asteroid extends Actor {
 
   move(dt) {
     this.exact_pos = this.exact_pos.subtract(this.velocity.multiply(dt));
-    /*
-     * JavaScript % always takes the sign of the dividend
-     * so we add the divisor to ensure the dividend is positive.
-     */
-    while (this.exact_pos.x < 0) {
-      this.exact_pos.x += this.boundX;
-    }
-    this.exact_pos.x = this.exact_pos.x % this.boundX;
-    while (this.exact_pos.y < 0) {
-      this.exact_pos.y += this.boundY;
-    }
-    this.exact_pos.y = this.exact_pos.y % this.boundY;
+    this.exact_pos.x = modulo(this.exact_pos.x, this.boundX);
+    this.exact_pos.y = modulo(this.exact_pos.y, this.boundY);
     this.pos = [this.exact_pos.x, this.exact_pos.y];
   }
 
@@ -876,7 +868,7 @@ function update(dt) {
 
   let bulletsToRemove = [],
       i = -1,
-      j, c, asteroid, x, y;
+      j, c, asteroid;
   for (let bullet of game.bullets) {
     i++;
     bullet.exact_pos = bullet.exact_pos.subtract(bullet.velocity.multiply(dt));
@@ -910,19 +902,7 @@ function update(dt) {
     if (bullet.exact_pos.distance_to(bullet.start_pos) > MAX_DISTANCE) {
       bulletsToRemove.push(i);
     }
-    /*
-     * JavaScript % always takes the sign of the dividend
-     * so we add the divisor to ensure the dividend is positive.
-     */
-    x = bullet.exact_pos.x;
-    y = bullet.exact_pos.y;
-    while (x < 0) {
-      x += WIDTH;
-    }
-    while (y < 0) {
-      y += HEIGHT;
-    }
-    bullet.pos = [x % WIDTH, y % HEIGHT];
+    bullet.pos = [modulo(bullet.exact_pos.x, WIDTH), modulo(bullet.exact_pos.y, HEIGHT)];
   }
   while (bulletsToRemove.length > 0) {
     game.bullets.splice(bulletsToRemove.pop(), 1);

@@ -312,6 +312,27 @@ WIDTH = TILE_SIZE * TILES_W;
 HEIGHT = TILE_SIZE * TILES_H;
 
 /*
+ * Return the result of the modulo operation dividend modulo divisor.
+ *
+ * The remainder operator (%) in JavaScript always takes the sign of the dividend.
+ * This trips you up when you come from Python and expect it to be a
+ * modulo operator for a negative dividend.
+ * This function correctly returns the non-negative remainder like Python.
+ */
+function modulo(dividend, divisor) {
+  return (((dividend % divisor) + divisor) % divisor);
+}
+
+/*
+ * Return a random integer N such that min <= N < max.
+ */
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+/*
  * Get the screen rectangle for the given tile coordinate.
  */
 function screen_rect(tile_pos) {
@@ -345,20 +366,8 @@ class Snake {
   move() {
     let {dx, dy, opposite} = DIRECTION.get(this.dir),
         [px=0, py=0] = this.pos;
-    /*
-     * JavaScript % always takes the sign of the dividend
-     * so we add the divisor to ensure the dividend is positive.
-     */
-    px += dx;
-    while (px < 0) {
-      px += TILES_W;
-    }
-    px = px % TILES_W;
-    py += dy;
-    while (py < 0) {
-      py += TILES_H;
-    }
-    py = py % TILES_H;
+    px = modulo(px + dx, TILES_W);
+    py = modulo(py + dy, TILES_H);
 
     this.pos = [px, py];
     this.tail.unshift([px, py, this.dir]);
@@ -488,15 +497,6 @@ class Apple {
 }
 
 var snake, snake_painter, apple;
-
-/*
- * Return a random integer N such that min <= N < max.
- */
-function getRandomInteger(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor((Math.random() * (max - min)) + min);
-}
 
 /*
  * Randomly place the apple somewhere that isn't currently occupied.
