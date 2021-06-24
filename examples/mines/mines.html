@@ -345,7 +345,7 @@ function edge_detection(gridpos, grid) {
           if (top_grid[ny][nx] !== FLAG_VALUE) {
             top_grid[ny][nx] = UNCOVER_VALUE;
           }
-          if (zeros.filter(z => (z[0] === nx) && (z[1] === ny)).length <= 0) {
+          if (zeros.every(z => ((z[0] !== nx) && (z[1] !== ny)))) {
             zeros.push([nx, ny]);
           }
         }

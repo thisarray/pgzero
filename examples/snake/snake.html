@@ -384,7 +384,7 @@ class Snake {
 
   has(pos) {
     let [x=0, y=0] = pos;
-    return (this.tail.filter(t => (t[0] === x) && (t[1] === y)).length > 0);
+    return (this.tail.some(t => ((t[0] === x) && (t[1] === y))));
   }
 
   grow() {

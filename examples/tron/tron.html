@@ -238,7 +238,7 @@ function update() {
     return;
   }
 
-  if (bike.trail.filter(t => (t[0] === gridX) && (t[1] === gridY)).length > 0) {
+  if (bike.trail.some(t => ((t[0] === gridX) && (t[1] === gridY)))) {
     // We've already set this pixel, so this is a crash
     kill_bike();
   }
