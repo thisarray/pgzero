@@ -668,6 +668,100 @@ function test_distance_to() {
   test.assertEqual(a.distance_to(a), 0);
 }
 
+function test_getBoundingBox() {
+  let a = new Actor('alien'),
+      r = a.getBoundingBox(),
+      hypotenuse = Math.hypot(a.width, a.height);
+  test.assertEqual(r.x, 0);
+  test.assertEqual(r.y, 0);
+  test.assertEqual(r.width, a.width);
+  test.assertEqual(r.height, a.height);
+
+  for (let value of [-630, -270, 90, 450]) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertAlmostEqual(r.x, -13);
+    test.assertAlmostEqual(r.y, 13);
+    test.assertAlmostEqual(r.width, a.height);
+    test.assertAlmostEqual(r.height, a.width);
+  }
+  for (let value of [-540, -180, 180, 540]) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertAlmostEqual(Math.abs(r.x), 0);
+    test.assertAlmostEqual(Math.abs(r.y), 0);
+    test.assertAlmostEqual(r.width, a.width);
+    test.assertAlmostEqual(r.height, a.height);
+  }
+  for (let value of [-450, -90, 270, 630]) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertAlmostEqual(r.x, -13);
+    test.assertAlmostEqual(r.y, 13);
+    test.assertAlmostEqual(r.width, a.height);
+    test.assertAlmostEqual(r.height, a.width);
+  }
+  for (let value of [-720, -360, 0, 360, 720]) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertEqual(r.x, 0);
+    test.assertEqual(r.y, 0);
+    test.assertEqual(r.width, a.width);
+    test.assertEqual(r.height, a.height);
+  }
+  for (let value = 0; value <= 360; value++) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertTrue(Math.abs(r.x) <= (a.height / 2));
+    test.assertTrue(Math.abs(r.y) <= (a.height / 2));
+    test.assertTrue(r.width >= a.width);
+    test.assertTrue(r.height >= a.width);
+  }
+
+  a.anchor = 'topleft';
+  a.pos = [0, 0];
+  for (let value of [-630, -270, 90, 450]) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertAlmostEqual(Math.abs(r.x), 0);
+    test.assertAlmostEqual(r.y, -a.width);
+    test.assertAlmostEqual(r.width, a.height);
+    test.assertAlmostEqual(r.height, a.width);
+  }
+  for (let value of [-540, -180, 180, 540]) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertAlmostEqual(r.x, -a.width);
+    test.assertAlmostEqual(r.y, -a.height);
+    test.assertAlmostEqual(r.width, a.width);
+    test.assertAlmostEqual(r.height, a.height);
+  }
+  for (let value of [-450, -90, 270, 630]) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertAlmostEqual(r.x, -a.height);
+    test.assertAlmostEqual(Math.abs(r.y), 0);
+    test.assertEqual(r.width, a.height);
+    test.assertEqual(r.height, a.width);
+  }
+  for (let value of [-720, -360, 0, 360, 720]) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertEqual(r.x, 0);
+    test.assertEqual(r.y, 0);
+    test.assertEqual(r.width, a.width);
+    test.assertEqual(r.height, a.height);
+  }
+  for (let value = 0; value <= 360; value++) {
+    a.angle = value;
+    r = a.getBoundingBox();
+    test.assertTrue(Math.abs(r.x) <= hypotenuse);
+    test.assertTrue(Math.abs(r.y) <= hypotenuse);
+    test.assertTrue(r.width >= a.width);
+    test.assertTrue(r.height >= a.width);
+  }
+}
+
 function test_blit() {
   let a = new Actor('alien');
   screen.clear();
