@@ -97,23 +97,23 @@ const keys = Object.freeze({
   Y: "KeyY",
   Z: "KeyZ",
   DELETE: "Delete",
-  KP0: "Numdpad0",
-  KP1: "Numdpad1",
-  KP2: "Numdpad2",
-  KP3: "Numdpad3",
-  KP4: "Numdpad4",
-  KP5: "Numdpad5",
-  KP6: "Numdpad6",
-  KP7: "Numdpad7",
-  KP8: "Numdpad8",
-  KP9: "Numdpad9",
-  KP_PERIOD: "NumdpadDecimal",
-  KP_DIVIDE: "NumdpadDivide",
-  KP_MULTIPLY: "NumdpadMultiply",
-  KP_MINUS: "NumdpadSubtract",
-  KP_PLUS: "NumdpadAdd",
-  KP_ENTER: "NumdpadEnter",
-  KP_EQUALS: "NumdpadEqual",
+  KP0: "Numpad0",
+  KP1: "Numpad1",
+  KP2: "Numpad2",
+  KP3: "Numpad3",
+  KP4: "Numpad4",
+  KP5: "Numpad5",
+  KP6: "Numpad6",
+  KP7: "Numpad7",
+  KP8: "Numpad8",
+  KP9: "Numpad9",
+  KP_PERIOD: "NumpadDecimal",
+  KP_DIVIDE: "NumpadDivide",
+  KP_MULTIPLY: "NumpadMultiply",
+  KP_MINUS: "NumpadSubtract",
+  KP_PLUS: "NumpadAdd",
+  KP_ENTER: "NumpadEnter",
+  KP_EQUALS: "NumpadEqual",
   UP: "ArrowUp",
   DOWN: "ArrowDown",
   RIGHT: "ArrowRight",
@@ -139,7 +139,7 @@ const keys = Object.freeze({
   F14: "F14",
   F15: "F15",
   NUMLOCK: "NumLock",
-  CAPSLOCK: "Capslock",
+  CAPSLOCK: "CapsLock",
   SCROLLOCK: "ScrollLock",
   RSHIFT: "ShiftRight",
   LSHIFT: "ShiftLeft",
@@ -1169,6 +1169,19 @@ class Rect {
       [x=0, y=0, width=0, height=0] = arguments;
     }
 
+    if (typeof x !== 'number') {
+      throw new TypeError('x must be a number.');
+    }
+    if (typeof y !== 'number') {
+      throw new TypeError('y must be a number.');
+    }
+    if (typeof width !== 'number') {
+      throw new TypeError('width must be a number.');
+    }
+    if (typeof height !== 'number') {
+      throw new TypeError('height must be a number.');
+    }
+
     this.x = x;
     this.y = y;
     this.width = width;
@@ -1582,11 +1595,11 @@ class Actor {
 
     // If it is a Number, x offset in pixels from the topleft corner to the anchor
     // If it is a String, relative offset that is lazily evaluated
-    this.anchor_dx = 'center';
+    this.anchorDx = 'center';
 
     // If it is a Number, y offset in pixels from the topleft corner to the anchor
     // If it is a String, relative offset that is lazily evaluated
-    this.anchor_dy = 'center';
+    this.anchorDy = 'center';
 
     // Initialize the anchor at center with the topleft corner at (0, 0)
     this.posx = Math.floor(this.width / 2);
@@ -1607,6 +1620,46 @@ class Actor {
   }
 
   /*
+   * Return an Array containing the x and y pixel offsets from the topleft corner to the anchor.
+   *
+   * This allows us to lazily evaluate the offsets.
+   */
+  _calculateAnchor() {
+    let result = [];
+    if (typeof this.anchorDx === 'number') {
+      result.push(this.anchorDx);
+    }
+    else if (typeof this.anchorDx === 'string') {
+      if (this.anchorDx === 'left') {
+        result.push(0);
+      }
+      else if (this.anchorDx === 'center') {
+        result.push(Math.floor(this.width / 2));
+      }
+      else if (this.anchorDx === 'right') {
+        result.push(this.width);
+      }
+    }
+
+    if (typeof this.anchorDy === 'number') {
+      result.push(this.anchorDy);
+    }
+    else if (typeof this.anchorDy === 'string') {
+      if (this.anchorDy === 'top') {
+        result.push(0);
+      }
+      else if (this.anchorDy === 'center') {
+        result.push(Math.floor(this.height / 2));
+      }
+      else if (this.anchorDy === 'bottom') {
+        result.push(this.height);
+      }
+    }
+
+    return result;
+  }
+
+  /*
    * anchor is overloaded to accept String or Number in Array or not.
    *
    * I personally think it is not Pythonic and violates
@@ -1614,53 +1667,54 @@ class Actor {
    * but I did not write the Pygame Zero spec.
    */
   set anchor(anchor) {
+    let [originalDx=0, originalDy=0] = this._calculateAnchor();
+
     if (typeof anchor === 'string') {
       let cleaned = anchor.trim().toLowerCase();
       if (cleaned === 'topleft') {
-        this.anchor_dx = 'left';
-        this.anchor_dy = 'top';
+        this.anchorDx = 'left';
+        this.anchorDy = 'top';
       }
       else if (cleaned === 'midtop') {
-        this.anchor_dx = 'center';
-        this.anchor_dy = 'top';
+        this.anchorDx = 'center';
+        this.anchorDy = 'top';
       }
       else if (cleaned === 'topright') {
-        this.anchor_dx = 'right';
-        this.anchor_dy = 'top';
+        this.anchorDx = 'right';
+        this.anchorDy = 'top';
       }
       else if (cleaned === 'midleft') {
-        this.anchor_dx = 'left';
-        this.anchor_dy = 'center';
+        this.anchorDx = 'left';
+        this.anchorDy = 'center';
       }
       else if (cleaned === 'center') {
-        this.anchor_dx = 'center';
-        this.anchor_dy = 'center';
+        this.anchorDx = 'center';
+        this.anchorDy = 'center';
       }
       else if (cleaned === 'midright') {
-        this.anchor_dx = 'right';
-        this.anchor_dy = 'center';
+        this.anchorDx = 'right';
+        this.anchorDy = 'center';
       }
       else if (cleaned === 'bottomleft') {
-        this.anchor_dx = 'left';
-        this.anchor_dy = 'bottom';
+        this.anchorDx = 'left';
+        this.anchorDy = 'bottom';
       }
       else if (cleaned === 'midbottom') {
-        this.anchor_dx = 'center';
-        this.anchor_dy = 'bottom';
+        this.anchorDx = 'center';
+        this.anchorDy = 'bottom';
       }
       else if (cleaned === 'bottomright') {
-        this.anchor_dx = 'right';
-        this.anchor_dy = 'bottom';
+        this.anchorDx = 'right';
+        this.anchorDy = 'bottom';
       }
       else {
         throw new RangeError(`Unknown anchor "${ anchor }". Must be "topleft", "midtop", "topright", "midleft", "center", "midright", "bottomleft", "midbottom", or "bottomright".`);
       }
-
-      return;
     }
-
-    if (typeof anchor === 'object') {
-      let x, y, cleaned;
+    else if (typeof anchor === 'object') {
+      let originalAnchorDx = this.anchorDx,
+          originalAnchorDy = this.anchorDy,
+          x, y, cleaned;
       if (Array.isArray(anchor)) {
         [x=0, y=0] = anchor;
       }
@@ -1669,18 +1723,18 @@ class Actor {
       }
 
       if (typeof x === 'number') {
-        this.anchor_dx = x;
+        this.anchorDx = x;
       }
       else if (typeof x === 'string') {
         cleaned = x.trim().toLowerCase();
         if (cleaned === 'left') {
-          this.anchor_dx = 'left';
+          this.anchorDx = 'left';
         }
         else if ((cleaned === 'center') || (cleaned === 'middle')) {
-          this.anchor_dx = 'center';
+          this.anchorDx = 'center';
         }
         else if (cleaned === 'right') {
-          this.anchor_dx = 'right';
+          this.anchorDx = 'right';
         }
         else {
           throw new RangeError(`Unknown anchor "${ x }". Must be "left", "center", "middle", or "right".`);
@@ -1691,31 +1745,43 @@ class Actor {
       }
 
       if (typeof y === 'number') {
-        this.anchor_dy = y;
+        this.anchorDy = y;
       }
       else if (typeof y === 'string') {
         cleaned = y.trim().toLowerCase();
         if (cleaned === 'top') {
-          this.anchor_dy = 'top';
+          this.anchorDy = 'top';
         }
         else if ((cleaned === 'center') || (cleaned === 'middle')) {
-          this.anchor_dy = 'center';
+          this.anchorDy = 'center';
         }
         else if (cleaned === 'bottom') {
-          this.anchor_dy = 'bottom';
+          this.anchorDy = 'bottom';
         }
         else {
+          // Reset the anchor in case the x value is valid and was set
+          this.anchorDx = originalAnchorDx;
+          this.anchorDy = originalAnchorDy;
           throw new RangeError(`Unknown anchor "${ y }". Must be "top", "center", "middle", or "bottom".`);
         }
       }
       else {
+        // Reset the anchor in case the x value is valid and was set
+        this.anchorDx = originalAnchorDx;
+        this.anchorDy = originalAnchorDy;
         throw new TypeError('Unrecognized anchor type. Must be a Number or a String.');
       }
-
-      return;
+    }
+    else {
+      throw new TypeError('Unrecognized anchor type.');
     }
 
-    throw new TypeError('Unrecognized anchor type.');
+    let [dx=0, dy=0] = this._calculateAnchor();
+    if ((dx !== originalDx) || (dy !== originalDy)) {
+      // If the anchor offsets changed, then update the anchor
+      this.posx = this.posx - originalDx + dx;
+      this.posy = this.posy - originalDy + dy;
+    }
   }
 
   get pos() {
@@ -1725,46 +1791,6 @@ class Actor {
     let [x=0, y=0] = pos;
     this.posx = x;
     this.posy = y;
-  }
-
-  /*
-   * Return an Array containing the x and y pixel offsets from the topleft corner to the anchor.
-   *
-   * This allows us to lazily evaluate the offsets.
-   */
-  _calculateAnchor() {
-    let result = [];
-    if (typeof this.anchor_dx === 'number') {
-      result.push(this.anchor_dx);
-    }
-    else if (typeof this.anchor_dx === 'string') {
-      if (this.anchor_dx === 'left') {
-        result.push(0);
-      }
-      else if (this.anchor_dx === 'center') {
-        result.push(Math.floor(this.width / 2));
-      }
-      else if (this.anchor_dx === 'right') {
-        result.push(this.width);
-      }
-    }
-
-    if (typeof this.anchor_dy === 'number') {
-      result.push(this.anchor_dy);
-    }
-    else if (typeof this.anchor_dy === 'string') {
-      if (this.anchor_dy === 'top') {
-        result.push(0);
-      }
-      else if (this.anchor_dy === 'center') {
-        result.push(Math.floor(this.height / 2));
-      }
-      else if (this.anchor_dy === 'bottom') {
-        result.push(this.height);
-      }
-    }
-
-    return result;
   }
 
   /*
@@ -1992,6 +2018,47 @@ class Actor {
     let vector = this._vector_to(target);
     return vector[0];
   }
+
+  /*
+   * Return a Rect object that is the minimum bounding box for this instance.
+   *
+   * The Rect methods of the Actor class do not account for rotation.
+   * So if you need to do collision detection with a rotated Actor instance,
+   * this method returns the minimum bounding box as a Rect object.
+   */
+  getBoundingBox() {
+    let [dx=0, dy=0] = this._calculateAnchor(),
+        angle = this.angle % 360,
+        theta = -angle * Math.PI / 180,
+        sinTheta = Math.sin(theta),
+        cosTheta = Math.cos(theta),
+        // width and height of the minimum bounding box
+        width = Math.abs(this.width * cosTheta) + Math.abs(this.height * sinTheta),
+        height = Math.abs(this.width * sinTheta) + Math.abs(this.height * cosTheta),
+        // Offset of the anchor from the center
+        cax = dx - (this.width / 2),
+        cay = dy - (this.height / 2),
+        // Subtract rotated offset of the anchor from the center + half from anchor
+        x = this.posx - ((cax * cosTheta) - (cay * sinTheta) + (width / 2)),
+        y = this.posy - ((cax * sinTheta) + (cay * cosTheta) + (height / 2));
+
+    // Use exact values if the angle is a right angle
+    if (angle === 0) {
+      return new Rect(this.x, this.y, this.width, this.height);
+    }
+    else if (angle === 90) {
+      return new Rect(this.posx - dy, this.posy - (this.width - dx), this.height, this.width);
+    }
+    else if (angle === 180) {
+      return new Rect(this.posx - (this.width - dx), this.posy - (this.height - dy), this.width, this.height);
+    }
+    else if (angle === 270) {
+      return new Rect(this.posx - (this.height - dy), this.posy - dx, this.height, this.width);
+    }
+    else {
+      return new Rect(x, y, width, height);
+    }
+  }
 }
 
 /*
@@ -2181,10 +2248,10 @@ class Inbetweener {
         if (start.length != end.length) {
           continue;
         }
-        if (start.filter(e => (typeof e !== 'number')).length > 0) {
+        if (start.some(e => (typeof e !== 'number'))) {
           continue;
         }
-        if (end.filter(e => (typeof e !== 'number')).length > 0) {
+        if (end.some(e => (typeof e !== 'number'))) {
           continue;
         }
         this.attributes.set(a, {start: start, end: end});
@@ -2744,14 +2811,14 @@ const screen = (function () {
     /*
      * Draw object to the screen at the given position.
      */
-    blit(object, pos) {
+    blit(object, pos, target) {
       if (context == null) {
         return;
       }
 
-      let [x=0, y=0] = pos,
-          image;
+      let x, y, image;
       if (object instanceof Actor) {
+        [x=0, y=0] = pos;
         image = images[object.name];
         context.save();
         if (typeof object.opacity === 'number') {
@@ -2768,6 +2835,7 @@ const screen = (function () {
         context.restore();
       }
       else if (object instanceof Surface) {
+        [x=0, y=0] = pos;
         context.save();
         context.putImageData(object.imageData, x, y);
         context.restore();
@@ -2778,7 +2846,20 @@ const screen = (function () {
         }
         image = images[object];
         context.save();
-        context.drawImage(image, x, y);
+        if (pos instanceof Rect) {
+          // Support scaling and tilesets when Rect objects are passed as arguments
+          if (target instanceof Rect) {
+            context.drawImage(image, pos.x, pos.y, pos.width, pos.height,
+                              target.x, target.y, target.width, target.height);
+          }
+          else {
+            context.drawImage(image, pos.x, pos.y, pos.width, pos.height);
+          }
+        }
+        else {
+          [x=0, y=0] = pos;
+          context.drawImage(image, x, y);
+        }
         context.restore();
       }
       else {
@@ -2871,8 +2952,12 @@ const screen = (function () {
       }
 
       // Add event listeners
+
+      // Cannot make KeyboardEvent listeners conditional because user may
+      // use keyboard builtin without defining on_key_* handlers
       window.addEventListener('keydown', keydown, true);
       window.addEventListener('keyup', keyup, true);
+
       if (canvas != null) {
         if (typeof window.on_mouse_down === 'function') {
           canvas.addEventListener('mousedown', mousedown);
@@ -2993,10 +3078,10 @@ class Joystick {
     if (Joystick._initialized) {
       return;
     }
-    window.addEventListener('gamepadconnected', Joystick._connect);
-    window.addEventListener('gamepaddisconnected', Joystick._disconnect);
     Joystick._controllers = [];
     Joystick._initialized = true;
+    window.addEventListener('gamepadconnected', Joystick._connect);
+    window.addEventListener('gamepaddisconnected', Joystick._disconnect);
   }
 
   /*
@@ -3165,22 +3250,42 @@ class Joystick {
  */
 class Surface {
   /*
+   * Pad a copy of the Array color to 4 elements.
+   */
+  static _padColorArray(color) {
+    let result = color.slice(0, 4);
+    while (result.length < 3) {
+      result.push(0);
+    }
+    while (result.length < 4) {
+      result.push(255);
+    }
+    return result;
+  }
+
+  /*
    * Return true if the numbers in the Arrays first and second are equal.
    */
   static isColorEqual(first, second) {
     if (Array.isArray(first) && Array.isArray(second)) {
-      const length = Math.min(first.length, second.length);
-      if (length <= 0) {
+      if (first.length <= 0) {
         return false;
       }
-      for (let i = 0; i < length; i++) {
-        if (typeof first[i] !== 'number') {
+      if (second.length <= 0) {
+        return false;
+      }
+
+      let a = Surface._padColorArray(first),
+          b = Surface._padColorArray(second);
+
+      for (let i = 0; i < 4; i++) {
+        if (typeof a[i] !== 'number') {
           return false;
         }
-        if (typeof second[i] !== 'number') {
+        if (typeof b[i] !== 'number') {
           return false;
         }
-        if (first[i] !== second[i]) {
+        if (a[i] !== b[i]) {
           return false;
         }
       }
@@ -3253,7 +3358,7 @@ class Surface {
       throw new TypeError('y must be a number.');
     }
     if (!Array.isArray(color)) {
-      throw new TypeError('color must be an Array of length 3 or 4.');
+      throw new TypeError('color must be an Array of 3 or 4 integers.');
     }
 
     if (x < 0) {
@@ -3270,14 +3375,12 @@ class Surface {
     }
 
     let start = this._coordinatesToIndex(x, y),
+        newColor = Surface._padColorArray(color),
         c;
     for (let i = 0; i < 4; i++) {
-      // Gracefully handle color being shorter than expected
-      if (i < color.length) {
-        c = color[i];
-      }
-      else {
-        c = 0;
+      c = newColor[i];
+      if (typeof c !== 'number') {
+        throw new TypeError('color must be an Array of 3 or 4 integers.');
       }
       // ImageData clamps the value if c is not in [0, 255]
       this.imageData.data[start+i] = c;
