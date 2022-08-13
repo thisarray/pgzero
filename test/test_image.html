@@ -39,7 +39,7 @@ The game screen appears here if your browser supports the Canvas API.
 </canvas>
 
 <form>
-<label for="imageSelect">Choose an image: </label>
+<label>Choose an image:
 <select id="imageSelect">
   <option selected>None</option>
   <option>alien</option>
@@ -54,6 +54,7 @@ The game screen appears here if your browser supports the Canvas API.
   <option>expected_rect</option>
   <option>expected_wrapped_gradient_text</option>
 </select>
+</label>
 </form>
 
 <script>
@@ -72,7 +73,7 @@ select.addEventListener('change', (event) => {
 });
 
 window.addEventListener('load', (event) => {
-  images.LOAD('#imageLoader img');
+  screen.init();
   console.dir(images);
 });
 </script>

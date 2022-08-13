@@ -671,6 +671,28 @@ function test_collidepoint_arguments() {
   test.assertTrue(a.collidepoint({x: a.left, y: a.top}));
 }
 
+function test_colliderect() {
+  let a = new Actor('alien');
+  a.topleft = [1, 2];
+
+  test.assertTrue(a.colliderect(new Rect(0, 0, 2, 3)),
+                  "a does not collide with Rect(0,0,2,3)");
+  test.assertFalse(a.colliderect(new Rect(0, 0, 1, 2)),
+                   "a collides with Rect(0,0,1,2)");
+  test.assertFalse(a.colliderect(new Rect(a.right, a.bottom, 2, 2)),
+                   "a collides with Rect(a.right,a.bottom,2,2)");
+  test.assertTrue(a.colliderect(new Rect(a.left + 1, a.top + 1, a.width - 2, a.height - 2)),
+                  "a does not collide with Rect(a.left+1,a.top+1,a.width-2,a.height-2)");
+  test.assertTrue(a.colliderect(new Rect(a.left - 1, a.top - 1, a.width + 2, a.height + 2)),
+                  "a does not collide with Rect(a.left-1,a.top-1,a.width+2,a.height+2)");
+  test.assertTrue(a.colliderect(new Rect(a)),
+                  "a does not collide with an identical rect");
+  test.assertFalse(a.colliderect(new Rect(a.right, a.bottom, 0, 0)),
+                   "a collides with Rect(a.right,a.bottom,0,0)");
+  test.assertFalse(a.colliderect(new Rect(a.right, a.bottom, 1, 1)),
+                   "a collides with Rect(a.right,a.bottom,1,1)");
+}
+
 function test_angle_to() {
   let a = new Actor('alien');
 
@@ -829,8 +851,7 @@ function test_blit() {
 }
 
 window.addEventListener('load', (event) => {
-  images.LOAD('#imageLoader img');
-  screen.set_mode('#screen');
+  screen.init();
   test.main();
 });
 </script>

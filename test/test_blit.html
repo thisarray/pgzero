@@ -83,8 +83,7 @@ function test_blit() {
 }
 
 window.addEventListener('load', (event) => {
-  images.LOAD('#imageLoader img');
-  screen.set_mode('#screen');
+  screen.init();
   test.main();
 });
 </script>

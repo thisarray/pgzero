@@ -521,7 +521,7 @@ function test_wrapped_gradient_text() {
     {topleft: [0, 0], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0, 255], gcolor: 'blue'},
     {midleft: [0, 18], fontname: 'eunomia_regular', fontsize: 18, color: 'red', gcolor: [0, 0, 255, 255]},
     {bottomleft: [0, 36], fontname: 'eunomia_regular', fontsize: 18, color: [255, 0, 0, 255], gcolor: [0, 0, 255, 255]}]) {
-    screen.clear()
+    screen.clear();
     screen.draw.text('gradient\ntext', config);
     assertCanvasEqual(expected, 'test_wrapped_gradient_text');
   }
@@ -535,7 +535,7 @@ function test_start() {
   screen.draw.filled_polygon([[x + 11, y], [x - 6, y - 10], [x - 6, y + 10]], 'black');
 }
 
-screen.set_mode('#screen');
+screen.init();
 test.main();
 </script>
 </body>
