@@ -119,9 +119,7 @@ function on_music_end() {
 }
 
 window.addEventListener('load', (event) => {
-  music.LOAD('#musicLoader audio');
-  reset();
-  screen.set_mode('#screen', '#reset', '#pause');
+  screen.init();
 });
 </script>
 </body>

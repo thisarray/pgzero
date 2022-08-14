@@ -1111,12 +1111,7 @@ function draw() {
 }
 
 window.addEventListener('load', (event) => {
-  images.LOAD('#imageLoader img');
-  sounds.LOAD('#soundLoader audio');
-  // Non-standard order for Surface
-  screen.set_mode('#screen', '#reset', '#pause');
-  reset();
-  screen.draw.playButton();
+  screen.init();
 });
 </script>
 </body>
