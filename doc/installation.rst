@@ -1,45 +1,17 @@
 Installing Pygame Zero
 ======================
 
-Included with Mu
-----------------
-
-The `Mu IDE <https://codewith.mu>`_, which is aimed at beginners, includes a
-version of Pygame Zero.
-
-You will need to `switch mode <https://codewith.mu/en/tutorials/1.0/modes>`_
-into Pygame Zero mode to use it. Then type in a program and
-`use the Play button <https://codewith.mu/en/tutorials/1.0/pgzero>`_ to run it
-with Pygame Zero.
-
-.. note::
-
-    The version of Mu included with Pygame Zero may not be the latest version!
-    You can find which version is installed by running this code in Mu::
-
-        import pgzero
-        print(pgzero.__version__)
-
-
-Stand-alone installation
-------------------------
-
-First of all, you need **Python 3** installed! This is usually installed
-already if you are using **Linux** or a **Raspberry Pi**. You can download it
-from `python.org <https://www.python.org/>` on other systems.
-
-
-Windows
-'''''''
-
-To install Pygame Zero, use **pip**. At a `command prompt`__, type
-
-.. __: https://www.lifewire.com/how-to-open-command-prompt-2618089
+On desktop systems
+~~~~~~~~~~~~~~~~~~
 
 ::
 
     pip install pgzero
 
+This will also install Pygame. Pre-compiled Pygame packages are available to pip
+for Windows & Linux (32-bit and 64-bit), and for Mac OS (64-bit only). If you
+have a different system, you'll need to find a way to install pygame first. Make
+sure you are using Python 3 not Python 2.
 
 Mac
 '''
@@ -80,17 +52,37 @@ running the above commands again::
     sudo python3 -m ensurepip
 
 
-.. _install-repl:
+On Raspberry Pi
+~~~~~~~~~~~~~~~
 
-Installing the REPL
--------------------
+pgzero has been installed by default since the release of Raspbian Jessie in
+September 2015!
 
-:doc:`Pygame Zero's REPL <repl>` is an optional feature. This can be enabled
-when installing with ``pip`` by adding ``pgzero[repl]`` to the pip command
-line::
 
-    pip install pgzero[repl]
+For flake8/pyflakes
+~~~~~~~~~~~~~~~~~~~
 
-If you aren't sure if you have the REPL installed, you can still run this
-command (it won't break anything if it is installed!).
+Checkers like Pyflakes are unaware of Pygame Zero's extra builtins.
 
+If you use ``flake8``, you can add Pygame Zero's list of builtins to your
+`flake8 configuration file <https://flake8.pycqa.org/en/latest/user/configuration.html>`_:
+
+.. code-block:: ini
+
+    [flake8]
+    builtins = Actor,Rect,ZRect,animate,clock,exit,images,keyboard,keymods,keys,mouse,music,screen,sounds,storage,tone
+
+If you use `pyflakes` directly then this is configured using the environment
+variable ``$PYFLAKES_BUILTINS``. On Linux and Mac you could write this in your
+terminal or put it in your shell configuration file (like ``~/.bashrc``)
+
+.. code-block:: bash
+
+    PYFLAKES_BUILTINS=Actor,Rect,ZRect,animate,clock,exit,images,keyboard,keymods,keys,mouse,music,screen,sounds,storage,tone
+    export PYFLAKES_BUILTINS
+
+On Windows:
+
+.. code-block:: none
+
+    set PYFLAKES_BUILTINS=Actor,Rect,ZRect,animate,clock,exit,images,keyboard,keymods,keys,mouse,music,screen,sounds,storage,tone

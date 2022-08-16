@@ -3,17 +3,14 @@ from . import clock
 from . import loaders
 from .game import PGZeroGame, DISPLAY_FLAGS
 from types import ModuleType
-import argparse
+from argparse import ArgumentParser
 import warnings
 import sys
 import os
 import pygame
+from contextlib import contextmanager
 pygame.mixer.pre_init(frequency=22050, size=-16, channels=2)
 pygame.init()
-
-
-# The base URL for Pygame Zero documentation
-DOCS_URL = 'http://pygame-zero.readthedocs.io/en/stable'
 
 
 def _check_python_ok_for_pygame():
@@ -60,45 +57,30 @@ def _substitute_full_framework_python():
 
 
 def main():
+
     # Pygame won't run from a normal virtualenv copy of Python on a Mac
     if not _check_python_ok_for_pygame():
         _substitute_full_framework_python()
 
-    parser = argparse.ArgumentParser()
-    try:
-        import ptpython  # noqa: checking if this is importable
-    except ImportError:
-        replhelp = argparse.SUPPRESS
-        have_repl = False
-    else:
-        replhelp = "Show a REPL for interacting with the game while it is running."
-        have_repl = True
+    parser = ArgumentParser()
     parser.add_argument(
-        '--repl',
+        '--fps',
         action='store_true',
-        help=replhelp
+        help="Print periodic FPS measurements on the terminal."
     )
     parser.add_argument(
-        'script',
-        help='The name of the Pygame Zero game to run'
+        'program',
+        help="The Pygame Zero program to run."
     )
     args = parser.parse_args()
-    if args.repl and not have_repl:
-        sys.exit(
-            "Error: Pygame Zero was not installed with REPL support.\n"
-            "\n"
-            "Please read\n"
-            "{}/installation.html#install-repl\n"
-            "for instructions on how to install this feature.".format(DOCS_URL)
-        )
 
     if __debug__:
         warnings.simplefilter('default', DeprecationWarning)
-    path = args.script
-    load_and_run(path, repl=args.repl)
+
+    load_and_run(args.program, fps=args.fps)
 
 
-def load_and_run(path, repl=False):
+def load_and_run(path, *, fps: bool = False):
     """Load and run the given Python file as the main PGZero game module.
 
     Note that the 'import pgzrun' IDE mode doesn't pass through this entry
@@ -121,16 +103,52 @@ def load_and_run(path, repl=False):
     sys._pgzrun = True
 
     prepare_mod(mod)
-    exec(code, mod.__dict__)
+    with temp_window():
+        exec(code, mod.__dict__)
 
     pygame.display.init()
+    PGZeroGame.show_default_icon()
     try:
-        run_mod(mod, repl=repl)
+        run_mod(mod, fps=fps)
     finally:
         # Clean some of the state we created, useful in testing
         pygame.display.quit()
         clock.clock.clear()
         del sys.modules[name]
+
+
+@contextmanager
+def temp_window():
+    """Create a temporary hidden window for the duration of the context.
+
+    Several Pygame surface operations access the state of the screen as a
+    global:
+
+    * Surface.convert_alpha() without arguments converts a surface for fast
+      blitting to the display.
+    * Surface() without flags creates a surface identical to the display
+      format.
+
+    There's no good API to expose what the display format is until we create
+    a window, so we create a temporary window, which let us use these
+    functions. The expectation is that when we create a real window this will
+    have the same display format and blits etc will still be fast.
+
+    After the initial load we dispose of this window and start again. Resizing
+    the initial window has a problem: it doesn't recenter the window on the
+    screen.
+
+    """
+    # An icon needs to exist before the window is created.
+    PGZeroGame.show_default_icon()
+    pygame.display.set_mode(
+        (100, 100),
+        flags=(DISPLAY_FLAGS & ~pygame.SHOWN) | pygame.HIDDEN,
+    )
+    try:
+        yield
+    finally:
+        pygame.display.quit()
 
 
 def prepare_mod(mod):
@@ -150,10 +168,6 @@ def prepare_mod(mod):
     storage.storage._set_filename_from_path(mod.__file__)
     loaders.set_root(mod.__file__)
 
-    # An icon needs to exist before the window is created.
-    PGZeroGame.show_default_icon()
-    pygame.display.set_mode((100, 100), DISPLAY_FLAGS)
-
     # Copy pgzero builtins into system builtins
     from . import builtins as pgzero_builtins
     import builtins as python_builtins
@@ -161,62 +175,6 @@ def prepare_mod(mod):
         python_builtins.__dict__.setdefault(k, v)
 
 
-def configure_repl(repl):
-    """Configure the ptpython REPL."""
-    from . import __version__ as pgzero_version
-    try:
-        import pkg_resources
-    except ImportError:
-        ptpython_version = '???'
-    else:
-        try:
-            dist = pkg_resources.working_set.require('ptpython')[0]
-        except (pkg_resources.DistributionNotFound, IndexError):
-            ptpython_version = '???'
-        else:
-            ptpython_version = dist.version
-
-    print(
-        'Pygame Zero {} REPL (ptpython {})'.format(
-            pgzero_version, ptpython_version
-        )
-    )
-    repl.show_status_bar = False
-    repl.confirm_exit = False
-
-
-def run_mod(mod, repl=False):
-    """Run the module.
-
-    If `repl` is True, also run a REPL to interact with the module.
-
-    """
-    try:
-        game = PGZeroGame(mod)
-        if repl:
-            import asyncio
-            from ptpython.repl import embed
-            loop = asyncio.get_event_loop()
-
-            # Make sure the game runs
-            # NB. if the game exits, the REPL will keep running, which allows
-            # inspecting final state
-            game_task = loop.create_task(game.run_as_coroutine())
-
-            # Wait for the REPL to exit
-            loop.run_until_complete(embed(
-                globals=vars(mod),
-                return_asyncio_coroutine=True,
-                patch_stdout=True,
-                title="Pygame Zero REPL",
-                configure=configure_repl,
-            ))
-
-            # Ask game loop to shut down (if it has not) and wait for it
-            if game.running:
-                pygame.event.post(pygame.event.Event(pygame.QUIT))
-                loop.run_until_complete(game_task)
-        else:
-            game.run()
-    finally:
-        storage.Storage.save_all()
+def run_mod(mod, **kwargs):
+    """Run the module."""
+    PGZeroGame(mod, **kwargs).run()

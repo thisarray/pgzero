@@ -292,6 +292,14 @@ class Actor:
         ax, ay = self._anchor
         self.topleft = px - ax, py - ay
 
+    def rect(self):
+        """Get a copy of the actor's rect object.
+
+        This allows Actors to duck-type like rects in Pygame rect operations,
+        and is not expected to be used in user code.
+        """
+        return self._rect.copy()
+
     @property
     def x(self):
         ax = self._anchor[0]
