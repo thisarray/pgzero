@@ -20,21 +20,21 @@ body {
 <body>
 <section id="imageLoader" class="hidden">
   <img class="hidden" src="images/alien.png" alt="alien" data-name="alien">
-  <img class="hidden" src="images/expected_alien_blit.png" alt="expected_alien_blit" data-name="expected_alien_blit">
-  <img class="hidden" src="images/expected_circle.png" alt="expected_circle" data-name="expected_circle">
-  <img class="hidden" src="images/expected_filled_circle.png" alt="expected_filled_circle" data-name="expected_filled_circle">
-  <img class="hidden" src="images/expected_filled_polygon.png" alt="expected_filled_polygon" data-name="expected_filled_polygon">
-  <img class="hidden" src="images/expected_filled_rect.png" alt="expected_filled_rect" data-name="expected_filled_rect">
-  <img class="hidden" src="images/expected_gradient.png" alt="expected_gradient" data-name="expected_gradient">
-  <img class="hidden" src="images/expected_line.png" alt="expected_line" data-name="expected_line">
-  <img class="hidden" src="images/expected_polygon.png" alt="expected_polygon" data-name="expected_polygon">
-  <img class="hidden" src="images/expected_rect.png" alt="expected_rect" data-name="expected_rect">
-  <img class="hidden" src="images/expected_wrapped_gradient_text.png" alt="expected_wrapped_gradient_text" data-name="expected_wrapped_gradient_text">
+  <img class="hidden" src="expected-image/alien_blit.png" alt="expected_alien_blit" data-name="expected_alien_blit">
+  <img class="hidden" src="expected-image/circle.png" alt="expected_circle" data-name="expected_circle">
+  <img class="hidden" src="expected-image/filled_circle.png" alt="expected_filled_circle" data-name="expected_filled_circle">
+  <img class="hidden" src="expected-image/filled_polygon.png" alt="expected_filled_polygon" data-name="expected_filled_polygon">
+  <img class="hidden" src="expected-image/filled_rect.png" alt="expected_filled_rect" data-name="expected_filled_rect">
+  <img class="hidden" src="expected-image/gradient.png" alt="expected_gradient" data-name="expected_gradient">
+  <img class="hidden" src="expected-image/line.png" alt="expected_line" data-name="expected_line">
+  <img class="hidden" src="expected-image/polygon.png" alt="expected_polygon" data-name="expected_polygon">
+  <img class="hidden" src="expected-image/rect.png" alt="expected_rect" data-name="expected_rect">
+  <img class="hidden" src="expected-image/wrapped_gradient_text.png" alt="expected_wrapped_gradient_text" data-name="expected_wrapped_gradient_text">
 </section>
 
 <h1>Test image</h1>
 
-<canvas id="screen" width="200" height="100">
+<canvas id="screen" width="200" height="200">
 The game screen appears here if your browser supports the Canvas API.
 </canvas>
 
@@ -61,7 +61,7 @@ The game screen appears here if your browser supports the Canvas API.
 const context = document.querySelector('#screen').getContext('2d');
 const select = document.querySelector('#imageSelect');
 select.addEventListener('change', (event) => {
-  context.clearRect(0, 0, 200, 100);
+  context.clearRect(0, 0, 200, 200);
   let name = event.target.value;
   if (name in images) {
     console.log(name);
@@ -73,7 +73,7 @@ select.addEventListener('change', (event) => {
 });
 
 window.addEventListener('load', (event) => {
-  screen.init();
+  screen.init('#foobar');
   console.dir(images);
 });
 </script>
