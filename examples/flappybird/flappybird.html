@@ -201,6 +201,9 @@ function update_pipes() {
       if (highScore == null) {
         highScore = 0;
       }
+      else {
+        highScore = parseInt(highScore, 10);
+      }
       if (bird.score > highScore) {
         localStorage.setItem('highscore', bird.score);
       }

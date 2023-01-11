@@ -55,13 +55,109 @@ The game screen appears here if your browser supports the Canvas API.
 
 <pre id="original"><code>
 from enum import Enum
-import json
+import math
 import operator
+import random
 
 from pygame.math import Vector2
 
-from space import create_star_scape
-from actors import Player, Asteroid
+from pygame import Surface, Rect
+
+from pygame.constants import HWSURFACE, SRCALPHA
+
+
+def create_star_scape(width, height):
+    surf = Surface((width, height), flags=SRCALPHA | HWSURFACE)
+    for i in range(random.randint(250, 350)):
+        color = random.randint(100, 255)
+        alpha = random.randint(0, 50)
+        topleft = (random.randint(0, width), random.randint(0, height))
+        surf.fill(
+            color=([color] * 3) + [alpha],
+            rect=Rect(
+                (topleft[0] - 1, topleft[1] - 1),
+                (3, 3),
+            )
+        )
+        surf.fill(
+            color=[color] * 3,
+            rect=Rect(topleft, (1, 1))
+        )
+    return surf
+
+
+class Player(Actor):
+    def __init__(self, **kwargs):
+        super(Player, self).__init__(&#x27;player&#x27;, **kwargs)
+        self.thrust = False
+        self.turn = 0
+        self.speed = 0.2
+        self.velocity = Vector2(0, 0)
+        self.exact_pos = Vector2(self.center)
+        self.frozen = False
+
+    def fire(self):
+        bullet = Actor(&#x27;bullet&#x27;, pos=self.pos)
+        ang = math.radians(self.angle)
+        bullet.exact_pos = bullet.start_pos = Vector2(self.pos)
+        bullet.velocity = Vector2(math.sin(ang), math.cos(ang)).normalize() * 1000.0
+        return bullet
+
+    def move(self, dt, bounds):
+        if self.turn:
+            self.angle += self.turn * dt * 270
+
+        if self.thrust:
+            ang = math.radians(self.angle)
+            self.velocity += math.sin(ang) * self.speed, math.cos(ang) * self.speed
+        else:
+            self.velocity *= 0.99
+        self.exact_pos = self.exact_pos - self.velocity
+        self.exact_pos.x %= bounds[0]
+        self.exact_pos.y %= bounds[1]
+        self.pos = self.exact_pos
+
+    def destroy(self, spawn):
+        self.pos = spawn
+        self.angle = 0
+        self.velocity = Vector2()
+        self.invulnerable = True
+        self.thrust = False
+        self.exact_pos = self.pos
+
+
+class Asteroid(Actor):
+    INITIAL_MASS = 3
+    ASTEROIDS = 3
+
+    def __init__(self, bounds, mass=INITIAL_MASS, **kwargs):
+        self.bounds = bounds
+        self.mass = mass
+        pos = (random.randint(0, bounds[0]), random.randint(0, bounds[1]))
+        self.velocity = Vector2()
+        self.velocity.from_polar((50, random.uniform(0, 360)))
+
+        image = &#x27;asteroid%s-%s&#x27; % (random.randint(1, self.ASTEROIDS), self.mass)
+        super().__init__(image, pos=pos, **kwargs)
+        self.exact_pos = Vector2(pos)
+
+    def move(self, dt):
+        self.exact_pos = self.exact_pos - (self.velocity * dt)
+        self.exact_pos.x %= self.bounds[0]
+        self.exact_pos.y %= self.bounds[1]
+        self.pos = self.exact_pos
+
+    def destroy(self):
+        if self.mass &gt; 1:
+            return [self.chunk() for i in range(3)]
+        return []
+
+    def chunk(self):
+        chunk = Asteroid(self.bounds, mass=self.mass - 1)
+        chunk.pos = self.pos
+        chunk.velocity = self.velocity.rotate(random.uniform(180, 360)) * 2
+        chunk.exact_pos = Vector2(chunk.pos)
+        return chunk
 
 ICON = &#x27;player&#x27;
 WIDTH = 800
@@ -147,7 +243,8 @@ def update(dt):
         if not game.player.frozen:
             game.player.move(dt, (WIDTH, HEIGHT))
 
-        if game.lives and not game.player.invulnerable and game.player.collidelist(game.asteroids) &gt; -1:
+        if game.lives and not game.player.invulnerable \
+                and game.player.collidelist(game.asteroids) &gt; -1:
             sounds.player_explosion.play()
             game.lives -= 1
             game.player.destroy((WIDTH / 2, HEIGHT / 2))
@@ -165,8 +262,17 @@ def update(dt):
         max_leaders = {}
         for initial, score in leader_board:
             max_leaders[initial] = max(score, max_leaders.get(initial, 0))
-        game.leader_board[&#x27;max_leaders&#x27;] = sorted(max_leaders.items(), key=operator.itemgetter(1), reverse=True)[:15]
-        game.leader_board[&#x27;leader_board&#x27;] = sorted(leader_board, key=operator.itemgetter(1), reverse=True)[:15]
+
+        game.leader_board[&#x27;max_leaders&#x27;] = sorted(
+            max_leaders.items(),
+            key=operator.itemgetter(1),
+            reverse=True
+        )[:15]
+        game.leader_board[&#x27;leader_board&#x27;] = sorted(
+            leader_board,
+            key=operator.itemgetter(1),
+            reverse=True
+        )[:15]
 
 
 def respawn():
@@ -244,7 +350,11 @@ def draw():
     screen.clear()
     screen.blit(stars, (0, 0))
     if game.stage is GameStage.start:
-        screen.draw.text(&#x27;Press SPACE to start&#x27;, center=(WIDTH / 2, HEIGHT / 2), color=&#x27;white&#x27;)
+        screen.draw.text(
+            &#x27;Press SPACE to start&#x27;,
+            center=(WIDTH / 2, HEIGHT / 2),
+            color=&#x27;white&#x27;
+        )
     elif game.stage is GameStage.game:
         if game.player.show:
             game.player.draw()
@@ -252,7 +362,11 @@ def draw():
             life_icons[i].draw()
         screen.draw.text(str(round(game.score)), midtop=(WIDTH / 2, 10))
     elif game.stage is GameStage.level_complete:
-        screen.draw.text(&#x27;LEVEL %s COMPLETE!&#x27; % game.level, midbottom=(WIDTH / 2, HEIGHT / 2), fontsize=60)
+        screen.draw.text(
+            f&#x27;LEVEL {game.level} COMPLETE!&#x27;,
+            midbottom=(WIDTH / 2, HEIGHT / 2),
+            fontsize=60
+        )
         screen.draw.text(str(round(game.score)), midtop=(WIDTH / 2, 10))
         screen.draw.text(&#x27;Next level in 3.. 2.. 1..&#x27;, midtop=(WIDTH / 2, HEIGHT / 2))
     elif game.stage is GameStage.game_over:
@@ -267,11 +381,17 @@ def draw():
             top += 40
             max_top = top
             for initial, score in game.leader_board[&#x27;leader_board&#x27;]:
-                screen.draw.text(&#x27;%s %s&#x27; % (initial, round(score)), midtop=((WIDTH / 2) - 60, top))
+                screen.draw.text(
+                    f&#x27;{initial} {round(score)}&#x27;,
+                    midtop=((WIDTH / 2) - 60, top)
+                )
                 top += 24
 
             for initial, score in game.leader_board[&#x27;max_leaders&#x27;]:
-                screen.draw.text(&#x27;%s %s&#x27; % (initial, round(score)), midtop=((WIDTH / 2) + 60, max_top))
+                screen.draw.text(
+                    f&#x27;{initial} {round(score)}&#x27;,
+                    midtop=((WIDTH / 2) + 60, max_top)
+                )
                 max_top += 24
 
         screen.draw.text(&#x27;Press SPACE to restart&#x27;, midtop=(WIDTH / 2, top + 40))
@@ -758,7 +878,8 @@ class Asteroid extends Actor {
     this.boundX = boundX;
     this.boundY = boundY;
     this.mass = mass;
-    this.velocity = (new Vecta(getRandom(-1, 1), getRandom(-1, 1))).normalize().multiply(50);
+    let angle = getRandom(0, 360);
+    this.velocity = new Vecta(50 * Math.cos(angle), 50 * Math.sin(angle));
     this.exact_pos = new Vecta(this.pos);
   }
 

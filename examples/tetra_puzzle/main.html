@@ -39,7 +39,7 @@ The game screen appears here if your browser supports the Canvas API.
 <h2>Original Python code</h2>
 
 <pre id="original"><code>
-&#x27;&#x27;&#x27;
+&quot;&quot;&quot;
 The MIT License (MIT)
 
 Copyright (c) 2015 David Bern
@@ -62,13 +62,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-&#x27;&#x27;&#x27;
+&quot;&quot;&quot;
 import random
 
+
 def grid_list(block_size):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Generates a gridlist used shape class
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     grids = []
     for y in range(-5, 1):
         row = []
@@ -78,23 +79,24 @@ def grid_list(block_size):
 
     return grids
 
+
 class GameOver(Exception):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Exception that is raised when a brick causes a game over state.
-    &#x27;&#x27;&#x27;
-    pass
+    &quot;&quot;&quot;
 
 
 class Shape(object):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     This will make the foundation for a Shape that the others shapes
     will inherit.
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, x_pos, size, color):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Inits the shape to start at y_pos and every block is of size in size.
         OShape consists of 4 blocks, each block is size wide and high.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # the widths and heights is determined by the shape and block size.
         self.block_size = size
         self._width = size
@@ -112,10 +114,10 @@ class Shape(object):
         self.color = color
 
     def shape_grid_update(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Update shapes position with the given _x and _y value.
         To be used after move or rotation is performed on the shape.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         for row_n, row in enumerate(self.piece):
             for element_n, element in enumerate(row):
                 if element is not None:
@@ -124,18 +126,18 @@ class Shape(object):
                     self.piece[row_n][element_n].y = start_y + self._y
 
     def draw(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Draws all the blocks inside the shape.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         for row in self.piece:
             for element in row:
                 if element is not None:
                     screen.draw.filled_rect(element, self.color)
 
     def pos_rotate(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Rotate shape clockwise
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # Transpose the list
         transposed = [new_row for new_row in zip(*self.piece)]
 
@@ -150,9 +152,9 @@ class Shape(object):
         self.shape_grid_update()
 
     def neg_rotate(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Rotate shape clockwise
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # Transpose the list
         transposed = [new_row for new_row in zip(*self.piece)]
 
@@ -166,45 +168,45 @@ class Shape(object):
         self.shape_grid_update()
 
     def move_down(self, speed):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Moves the shape downwards in the speed passed in arg speed.
         speed is the number of pixels to move per update.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self._y += speed
         self.shape_grid_update()
 
     def move_up(self, speed):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Moves the shape upwards in the speed passed in arg speed.
         speed is the number of pixels to move per update.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self._y -= speed
         self.shape_grid_update()
 
     def move_right(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Moves the shape 1 step to the right.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self._x += self.block_size
         self.shape_grid_update()
 
     def move_left(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Moves the shape 1 step to the left
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self._x -= self.block_size
         self.shape_grid_update()
 
     def bottom(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Gives the bottom pos of the first block in the first row.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         return self._y
 
     def left(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Gives the left pos of the first block in the first row.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         x_pos = []
         for row in self.piece:
             for element in row:
@@ -214,9 +216,9 @@ class Shape(object):
         return min(x_pos)
 
     def right(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Gives the right pos of the last block in the first row.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         x_pos = []
         for row in self.piece:
             for element in row:
@@ -226,16 +228,16 @@ class Shape(object):
         return max(x_pos)
 
     def top(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Gives the top pos of the first block in the second row.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # second row, first block will work fine.
         return self._y + (self.block_size * 2)
 
     def gameboard_collision(self, gameboard):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Check if this piece have collided with any other piece on the bottom.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         for row in self.piece:
             for element in row:
                 if element is not None:
@@ -249,9 +251,9 @@ class Shape(object):
         return False
 
     def shape_collision(self, other_pieces):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Check if this piece have collided with any other piece on the bottom.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
 
         # Unexpected behaviour. As it seems the bottom check is unnecessary
         for row in self.piece:
@@ -263,9 +265,9 @@ class Shape(object):
         return False
 
     def get_rect(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Returns a list of rects
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         rect_list = []
         for row in self.piece:
             for element in row:
@@ -276,9 +278,9 @@ class Shape(object):
         return rect_list
 
     def remove(self, block_list):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Compare list of bricks against piece. If any match remove the entity.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         for block in block_list:
             for row in self.piece:
                 try:
@@ -293,11 +295,11 @@ class Shape(object):
 
 
 class OShape(Shape):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Shape:
       xx
       xx
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
 
     def __init__(self, x_pos, size, color):
         Shape.__init__(self, x_pos, size, color)
@@ -314,27 +316,27 @@ class OShape(Shape):
         self.shape_grid_update()
 
     def pos_rotate(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Try to rotate this one to victory is futile
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # This will override the method defined in the base class Shape
         pass
 
     def neg_rotate(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Try to rotate this one to victory is futile
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # This will override the method defined in the base class Shape
         pass
 
 
 class LShape(Shape):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Shape:
       x
       x
       xx
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
 
     def __init__(self, x_pos, size, color):
         Shape.__init__(self, x_pos, size, color)
@@ -342,7 +344,8 @@ class LShape(Shape):
                       [None, None, None, None, None, None],
                       [None, None, Rect((0, 0), (size, size)), None, None, None],
                       [None, None, Rect((0, 0), (size, size)), None, None, None],
-                      [None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None, None],
+                      [None, None, Rect((0, 0), (size, size)), Rect(
+                          (0, 0), (size, size)), None, None],
                       [None, None, None, None, None, None]]
 
         # Upate shape with set _x and _y values
@@ -350,13 +353,14 @@ class LShape(Shape):
 
 
 class IShape(Shape):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Shape:
       x
       x
       x
       x
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, x_pos, size, color):
         Shape.__init__(self, x_pos, size, color)
         self.piece = [[None, None, None, None, None, None],
@@ -371,17 +375,20 @@ class IShape(Shape):
 
 
 class ZShape(Shape):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Shape:
      xx
       xx
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, x_pos, size, color):
         Shape.__init__(self, x_pos, size, color)
         self.piece = [[None, None, None, None, None, None],
                       [None, None, None, None, None, None],
-                      [None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None, None],
-                      [None, None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None],
+                      [None, None, Rect((0, 0), (size, size)), Rect(
+                          (0, 0), (size, size)), None, None],
+                      [None, None, None, Rect((0, 0), (size, size)), Rect(
+                          (0, 0), (size, size)), None],
                       [None, None, None, None, None, None],
                       [None, None, None, None, None, None]]
 
@@ -390,17 +397,20 @@ class ZShape(Shape):
 
 
 class SShape(Shape):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Shape:
       xx
      xx
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, x_pos, size, color):
         Shape.__init__(self, x_pos, size, color)
         self.piece = [[None, None, None, None, None, None],
                       [None, None, None, None, None, None],
-                      [None, None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None],
-                      [None, None, Rect((0, 0), (size, size)), Rect((0, 0), (size, size)), None, None],
+                      [None, None, None, Rect((0, 0), (size, size)), Rect(
+                          (0, 0), (size, size)), None],
+                      [None, None, Rect((0, 0), (size, size)), Rect(
+                          (0, 0), (size, size)), None, None],
                       [None, None, None, None, None, None],
                       [None, None, None, None, None, None]]
 
@@ -409,11 +419,12 @@ class SShape(Shape):
 
 
 class TShape(Shape):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Shape:
      xxx
       x
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, x_pos, size, color):
         Shape.__init__(self, x_pos, size, color)
         self.piece = [[None, None, None, None, None, None],
@@ -430,12 +441,13 @@ class TShape(Shape):
 
 
 class JShape(Shape):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Shape:
       x
       x
      xx
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, x_pos, size, color):
         Shape.__init__(self, x_pos, size, color)
         self.piece = [[None, None, None, None, None, None],
@@ -451,7 +463,7 @@ class JShape(Shape):
 
 
 class Bricks(object):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     There is the following kind of bricks
     1: O-shaped
     2: L-shaped
@@ -472,12 +484,13 @@ class Bricks(object):
 
     The Brick class will function as a bridge for all the shapes
     and as a container for bricks.
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, block_size):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Valid data for parameter shape is:
         1, 2, 3, 4
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.block_size = block_size
         self.bricklist = []
 
@@ -491,86 +504,87 @@ class Bricks(object):
                               7: (0xFF, 0xA1, 0x0)}
 
     def new_brick(self, shape, color, pos, size):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Adds a new brick to the list
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # Check if parameter shape is valid else create the Brick piece.
         if shape not in self.shape_list:
             raise ValueError(&#x27;Not in shape_list: {0}&#x27;.format(shape))
         elif color not in self.color_palette:
             raise ValueError(&#x27;Not in color_palette: {0}&#x27;.format(color))
         else:
-            self.bricklist.append(self.shape_list[shape](pos, size, self.color_palette[color]))
+            self.bricklist.append(self.shape_list[shape](
+                pos, size, self.color_palette[color]))
 
     @property
     def bottom(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Returns the position of the bottom.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         return self.bricklist[-1].bottom()
 
     def move_list_down(self, move_list):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Moves the list of blocks one step down.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         for block in move_list:
             block.y += self.block_size
 
     def move_active_down(self, speed):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Move active brick down in a given speed
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.bricklist[-1].move_down(speed)
 
     def move_active_up(self, speed):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Move active brick up with a given speed
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.bricklist[-1].move_up(speed)
 
     def move_active_right(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Move brick right one step
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.bricklist[-1].move_right()
 
     def move_active_left(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Move active brick left one step
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.bricklist[-1].move_left()
 
     def pos_rotate_active(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Rotates active brick 90deg.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.bricklist[-1].pos_rotate()
 
     def neg_rotate_active(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Rotates active brick -90deg.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.bricklist[-1].neg_rotate()
 
     def draw(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Draw shape on to the screen
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         for brick in self.bricklist:
             brick.draw()
 
     def gameboard_collision(self, gameboard):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Check if Brick have hit gameboard bottom
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         return self.bricklist[-1].gameboard_collision(gameboard)
 
     def shape_collision(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         other_pieces is expected to be a list of type Rect
         If piece have collided with other piece at bottom.
         returns true.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         for brick in self.bricklist[:-1]:
             if self.bricklist[-1].shape_collision(brick.get_rect()):
                 return True
@@ -578,11 +592,11 @@ class Bricks(object):
         return False
 
     def bounds_out(self, gameboard):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Returns True if any of the active brick is out side of the
         gameboard when called.
         Else False
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         block_list = self.bricklist[-1].get_rect()
         game_rect = gameboard.get_rect()
 
@@ -595,22 +609,22 @@ class Bricks(object):
         return False
 
     def remove(self, block_list):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         If brick contains any of the bricks in list. It will remove them
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         for brick in self.bricklist:
             brick.remove(block_list)
 
     def get_active_rect(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Returns rectangle objects from brick.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         return self.bricklist[-1].get_rect()
 
     def get_rect_list(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Helper method to compile a list of rects from a list of bricks
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         rect_list = []
         for brick in self.bricklist:
             rect_list.extend(brick.get_rect())
@@ -618,18 +632,19 @@ class Bricks(object):
 
 
 class ScoreBoard(object):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Shows the game the current score
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, pos):
         self.title = &#x27;Score&#x27;
         self.pos_x, self.pos_y = pos
         self.current_score = 0
 
     def add_to_score(self, points):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Takes points as argument and adds it to the current score
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # Calculate score multiplier
         multiplier = points / 10
 
@@ -637,9 +652,9 @@ class ScoreBoard(object):
         self.current_score += int(points * multiplier)
 
     def draw(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Draws title and current score to surface
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         screen.draw.text(self.title,
                          (self.pos_x, self.pos_y),
                          color=(0xDE, 0xAD, 0xFF),
@@ -651,10 +666,11 @@ class ScoreBoard(object):
 
 
 class GameBoard(object):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Implements the play area and is judge that decides what rectangles
     that should be removed and which dead bricks that should move down.
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, position, gameboard_size, block_size, color):
         pos_x, pos_y = position
         self._pos_x = pos_x
@@ -667,32 +683,32 @@ class GameBoard(object):
         self.color = color
 
     def center(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Returns the centrum pos in the X axis.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         center = (self._board.width / 2) + self._pos_x
         return center
 
     def get_rect(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Returns a Rect object of the GameBoard
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         return self._board
 
     def draw(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         To be called when we want it to be drawn onto the screen surface.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         screen.draw.filled_rect(self._board, self.color)
 
     def ruler(self, rects):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Takes a list of bricks. Returns a list of rects that should be removed
         from the first row that it encounters
         and a list of rects that should be moved down a row.
 
         If nothing to report, it returns a tuple of (None, None)
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # Get a list of every block that is available on the gameboard.
         blocks = rects
 
@@ -731,17 +747,18 @@ class GameBoard(object):
             # Step the ruler to next row.
             ruler_rect.y -= self.block_size
 
-        #No full row, no blocks the be moved down.
+        # No full row, no blocks the be moved down.
         return (None, None)
 
 
 class Game(object):
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Game board, bricks and controls.
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
+
     def __init__(self, x, y, cols, rows):
-        &#x27;&#x27;&#x27;
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
+        &quot;&quot;&quot;
         # Block setting
         self.block_size = 20
 
@@ -752,7 +769,8 @@ class Game(object):
 
         self.width = cols * self.block_size
         self.height = rows * self.block_size
-        self.gameboard = GameBoard((x, y), (cols, rows), self.block_size, (0x00, 0x00, 0x00))
+        self.gameboard = GameBoard(
+            (x, y), (cols, rows), self.block_size, (0x00, 0x00, 0x00))
 
         # Scoreboard
         margin = 10
@@ -771,30 +789,31 @@ class Game(object):
         self.new_brick()
 
     def new_brick(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Creates a new brick when previous get locked in place
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.bricks.new_brick(random.randint(1, 7),
                               random.randint(1, 7),
                               self.gameboard.center(),
                               self.block_size)
 
     def draw(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Draw game
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.gameboard.draw()
         self.bricks.draw()
         self.scoreboard.draw()
 
         if not self.game_active:
-            screen.draw.text(&#x27;Game Over&#x27;, (40, 100), color=(0xDE, 0xAD, 0xFF), fontsize=80)
+            screen.draw.text(&#x27;Game Over&#x27;, (40, 100), color=(
+                0xDE, 0xAD, 0xFF), fontsize=80)
 
     def remove_complete_rows(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         For every complete row, request to remove it.
         The request is sent to each brick in the game.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         points = 0
         # Check if row/rows became complete
         while True:
@@ -813,15 +832,15 @@ class Game(object):
         self.scoreboard.add_to_score(points)
 
     def toggle_pause(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Pause/Un-pause the game
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         self.game_pause = not self.game_pause
 
     def proceed(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Is called to change the state of the game.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         # Is brick active, if not, kill it and create a new one.
         if self.found_collision():
             self.bricks.move_active_up(self.speed)
@@ -838,9 +857,9 @@ class Game(object):
             self.bricks.move_active_down(self.speed)
 
     def found_collision(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Check if active brick have collided with anything.
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         if self.bricks.gameboard_collision(self.gameboard.get_rect()):
             return True
         elif self.bricks.shape_collision():
@@ -849,10 +868,10 @@ class Game(object):
             return False
 
     def controls(self, direction):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Will be called for a given intervall. This prevents the blocks from
         flying from left to right in high speed
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
 
         # Check if user want to move brick side ways.
         if direction == &#x27;right&#x27;:
@@ -880,9 +899,9 @@ class Game(object):
                 self.bricks.pos_rotate_active()
 
     def reset(self):
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Restarts the game
-        &#x27;&#x27;&#x27;
+        &quot;&quot;&quot;
         Game.__init__(self, self._xpos, self._ypos, self._cols, self._rows)
 
 
@@ -901,11 +920,12 @@ TETRA_PUZZLE = Game(100, 50, 10, 20)
 SPEEDOMETER_LEFT = 0
 SPEEDOMETER_RIGHT = 0
 
+
 def control_tick():
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Gets triggerad by clock.
     Tells the game betris what the user want to do, if any.
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     global SPEEDOMETER_RIGHT
     global SPEEDOMETER_LEFT
 
@@ -923,11 +943,12 @@ def control_tick():
             SPEEDOMETER_LEFT += 0.01
             TETRA_PUZZLE.controls(&#x27;left&#x27;)
 
+
 def on_key_down(key):
     # if key is keys.RIGHT:
-        # TETRA_PUZZLE.controls(&#x27;right&#x27;)
+    # TETRA_PUZZLE.controls(&#x27;right&#x27;)
     # elif key is keys.LEFT:
-        # TETRA_PUZZLE.controls(&#x27;left&#x27;)
+    # TETRA_PUZZLE.controls(&#x27;left&#x27;)
     if key is keys.R:
         TETRA_PUZZLE.reset()
     elif key is keys.P:
@@ -941,20 +962,22 @@ def on_key_down(key):
 # Setup time between each check of user controls.
 clock.schedule_interval(control_tick, (0.05 - SPEEDOMETER_RIGHT) - SPEEDOMETER_LEFT)
 
+
 def update():
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Update block position.
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     if TETRA_PUZZLE.game_active and not TETRA_PUZZLE.game_pause:
         try:
             TETRA_PUZZLE.proceed()
         except GameOver:
             draw()
 
+
 def draw():
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     Draw game
-    &#x27;&#x27;&#x27;
+    &quot;&quot;&quot;
     screen.fill((0xFF, 0xFF, 0xFF))
     TETRA_PUZZLE.draw()
 </code></pre>
@@ -1737,7 +1760,7 @@ class GameBoard {
       ruler_rect.y -= this.block_size;
     }
 
-    //No full row, no blocks the be moved down.
+    // No full row, no blocks the be moved down.
     return [[], []];
   }
 }
