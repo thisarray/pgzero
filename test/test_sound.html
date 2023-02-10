@@ -91,9 +91,21 @@ for (let button of Array.from(document.querySelectorAll('button'))) {
   }
 }
 
+function soundStart(event) {
+  console.log('Start ' + event.target.dataset.name.trim());
+}
+
+function soundEnd(event) {
+  console.log('End ' + event.target.dataset.name.trim());
+}
+
 window.addEventListener('load', (event) => {
   screen.init();
   console.dir(sounds);
+  for (const n of Object.getOwnPropertyNames(sounds)) {
+    sounds[n].addEventListener('play', soundStart);
+    sounds[n].addEventListener('ended', soundEnd);
+  }
 });
 </script>
 </body>
