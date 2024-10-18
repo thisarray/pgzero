@@ -176,7 +176,14 @@ function test_anchor() {
 
   for (let x = -a.width; x <= (a.width * 2); x++) {
     for (let y = -a.height; y <= (a.height * 2); y++) {
-      for (let anchor of [[x, y], {x: x, y: y}]) {
+      for (let anchor of [[x, y], {x: x, y: y}, new Rect(x, y, 4, 2)]) {
+        a.anchor = 'center';
+        // Test the Actor has not moved
+        test.assertEqual(a.x, 0);
+        test.assertEqual(a.y, 0);
+        test.assertEqual(a.anchorDx, 'center');
+        test.assertEqual(a.anchorDy, 'center');
+
         a.anchor = anchor;
         // Test the Actor has not moved
         test.assertEqual(a.x, 0);
