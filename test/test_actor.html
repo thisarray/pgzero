@@ -441,6 +441,10 @@ function test_position() {
     a.posy = i;
     test.assertEqual(a.pos, [midx, i]);
   }
+  a.pos = new Rect(4, 2, midx, midy);
+  test.assertEqual(a.pos, [4, 2]);
+  test.assertEqual(a.posx, 4);
+  test.assertEqual(a.posy, 2);
 }
 
 function test_left() {
