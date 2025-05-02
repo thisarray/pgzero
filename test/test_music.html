@@ -69,60 +69,60 @@ function on_music_end() {
 }
 
 const form = document.querySelector('#player');
-document.querySelector('#playMp3').addEventListener('click', (event) => {
+form.querySelector('#playMp3').addEventListener('click', (event) => {
   music.play('mp3');
   test.assertEqual(music.get_pos(), 0);
   test.assertTrue(music.is_playing());
   event.preventDefault();
 });
-document.querySelector('#playOgg').addEventListener('click', (event) => {
+form.querySelector('#playOgg').addEventListener('click', (event) => {
   music.play('ogg');
   test.assertEqual(music.get_pos(), 0);
   test.assertTrue(music.is_playing());
   event.preventDefault();
 });
-document.querySelector('#playOnceMp3').addEventListener('click', (event) => {
+form.querySelector('#playOnceMp3').addEventListener('click', (event) => {
   music.play_once('mp3');
   test.assertEqual(music.get_pos(), 0);
   test.assertTrue(music.is_playing());
   event.preventDefault();
 });
-document.querySelector('#playOnceOgg').addEventListener('click', (event) => {
+form.querySelector('#playOnceOgg').addEventListener('click', (event) => {
   music.play_once('ogg');
   test.assertEqual(music.get_pos(), 0);
   test.assertTrue(music.is_playing());
   event.preventDefault();
 });
-document.querySelector('#queueMp3').addEventListener('click', (event) => {
+form.querySelector('#queueMp3').addEventListener('click', (event) => {
   music.queue('mp3');
   event.preventDefault();
 });
-document.querySelector('#queueOgg').addEventListener('click', (event) => {
+form.querySelector('#queueOgg').addEventListener('click', (event) => {
   music.queue('ogg');
   event.preventDefault();
 });
-document.querySelector('#pause').addEventListener('click', (event) => {
+form.querySelector('#pause').addEventListener('click', (event) => {
   music.pause();
   test.assertFalse(music.is_playing());
   event.preventDefault();
 });
-document.querySelector('#unpause').addEventListener('click', (event) => {
+form.querySelector('#unpause').addEventListener('click', (event) => {
   music.unpause();
   test.assertTrue(music.is_playing());
   event.preventDefault();
 });
-document.querySelector('#rewind').addEventListener('click', (event) => {
+form.querySelector('#rewind').addEventListener('click', (event) => {
   music.rewind();
   test.assertEqual(music.get_pos(), 0);
   event.preventDefault();
 });
-document.querySelector('#stop').addEventListener('click', (event) => {
+form.querySelector('#stop').addEventListener('click', (event) => {
   music.stop();
   test.assertFalse(music.is_playing());
   test.assertTrue(music.get_pos() > 0);
   event.preventDefault();
 });
-document.querySelector('#fadeout').addEventListener('click', (event) => {
+form.querySelector('#fadeout').addEventListener('click', (event) => {
   music.fadeout(1);
   test.assertTrue(Inbetweener.queue.length > 0);
   test.assertTrue(music.is_playing());
