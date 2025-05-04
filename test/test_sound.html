@@ -54,6 +54,8 @@ The game screen appears here if your browser supports the Canvas API.
 <ul>
   <li>
     <button type="button" data-name="powerup">Play</button>
+    <button type="button" data-name="powerup">Play 0</button>
+    <button type="button" data-name="powerup">Play 7</button>
     <button type="button" data-name="powerup">Loop</button>
     <button type="button" data-name="powerup">Stop</button>
     <button type="button" data-name="powerup">Fade in</button>
@@ -101,6 +103,28 @@ for (let button of document.querySelectorAll('ul button')) {
       event.preventDefault();
     });
   }
+  else if (action === 'Play 0') {
+    button.addEventListener('click', (event) => {
+      console.log(label);
+      sounds[name].play(0);
+      test.assertFalse(sounds[name].audioElement.loop);
+      test.assertEqual(sounds[name].loopCount, 0);
+      test.assertFalse(sounds[name]._play_again());
+      test.assertEqual(sounds[name].get_volume(), 1);
+      event.preventDefault();
+    });
+  }
+  else if (action === 'Play 7') {
+    button.addEventListener('click', (event) => {
+      console.log(label);
+      sounds[name].play(7);
+      test.assertFalse(sounds[name].audioElement.loop);
+      test.assertEqual(sounds[name].loopCount, 6);
+      test.assertTrue(sounds[name]._play_again());
+      test.assertEqual(sounds[name].get_volume(), 1);
+      event.preventDefault();
+    });
+  }
   else if (action === 'Loop') {
     button.addEventListener('click', (event) => {
       console.log(label);
@@ -118,6 +142,7 @@ for (let button of document.querySelectorAll('ul button')) {
       sounds[name].stop();
       test.assertFalse(sounds[name].audioElement.loop);
       test.assertEqual(sounds[name].loopCount, 0);
+      test.assertFalse(sounds[name]._play_again());
       test.assertEqual(sounds[name].audioElement.currentTime, sounds[name].get_length());
       test.assertEqual(sounds[name].get_volume(), 1);
       event.preventDefault();
@@ -140,6 +165,7 @@ for (let button of document.querySelectorAll('ul button')) {
       sounds[name].fadeout(0.1);
       test.assertFalse(sounds[name].audioElement.loop);
       test.assertEqual(sounds[name].loopCount, 0);
+      test.assertFalse(sounds[name]._play_again());
       test.assertEqual(sounds[name].get_volume(), 1);
       event.preventDefault();
     });
@@ -157,6 +183,16 @@ function soundEnd(event) {
 window.addEventListener('load', (event) => {
   screen.init();
   console.dir(sounds);
+  for (const n of Object.getOwnPropertyNames(sounds)) {
+    sounds[n].audioElement.addEventListener('play', soundStart);
+    sounds[n].audioElement.addEventListener('ended', soundEnd);
+    test.assertEqual(sounds[n].audioElement.currentTime, 0);
+    test.assertFalse(sounds[n].audioElement.loop);
+    test.assertFalse(sounds[n].audioElement.muted);
+    test.assertEqual(sounds[n].audioElement.volume, 1);
+    test.assertEqual(sounds[n].loopCount, 0);
+    test.assertEqual(sounds[n].volume, 1);
+  }
 });
 </script>
 </body>
