@@ -59,8 +59,7 @@ The game screen appears here if your browser supports the Canvas API.
 
 <script>
 const context = document.querySelector('#screen').getContext('2d');
-const select = document.querySelector('#imageSelect');
-select.addEventListener('change', (event) => {
+document.querySelector('#imageSelect').addEventListener('change', (event) => {
   context.clearRect(0, 0, 200, 200);
   let name = event.target.value;
   if (name in images) {
