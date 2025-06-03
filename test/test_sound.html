@@ -186,12 +186,36 @@ window.addEventListener('load', (event) => {
   for (const n of Object.getOwnPropertyNames(sounds)) {
     sounds[n].audioElement.addEventListener('play', soundStart);
     sounds[n].audioElement.addEventListener('ended', soundEnd);
+
     test.assertEqual(sounds[n].audioElement.currentTime, 0);
     test.assertFalse(sounds[n].audioElement.loop);
     test.assertFalse(sounds[n].audioElement.muted);
     test.assertEqual(sounds[n].audioElement.volume, 1);
     test.assertEqual(sounds[n].loopCount, 0);
     test.assertEqual(sounds[n].volume, 1);
+    test.assertEqual(sounds[n].get_volume(), 1);
+
+    if (!isNaN(sounds[n].get_length())) {
+      test.assertTrue(sounds[n].get_length() > 0);
+    }
+    for (let [v, expected] of [
+      [-1, 0],
+      [0, 0],
+      [0.25, 0.25],
+      [0.5, 0.5],
+      [0.75, 0.75],
+      [1, 1],
+      [2, 1]]) {
+      sounds[n].set_volume(v);
+
+      test.assertEqual(sounds[n].audioElement.currentTime, 0);
+      test.assertFalse(sounds[n].audioElement.loop);
+      test.assertFalse(sounds[n].audioElement.muted);
+      test.assertEqual(sounds[n].audioElement.volume, expected);
+      test.assertEqual(sounds[n].loopCount, 0);
+      test.assertEqual(sounds[n].volume, expected);
+      test.assertEqual(sounds[n].get_volume(), expected);
+    }
   }
 });
 </script>
