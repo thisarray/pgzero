@@ -172,7 +172,7 @@ class ResourceLoader:
 
 
 class ImageLoader(ResourceLoader):
-    EXTNS = ['png', 'gif', 'jpg', 'jpeg', 'bmp']
+    EXTNS = ['png', 'gif', 'jpg', 'jpeg', 'bmp', 'webp']
     TYPE = 'image'
 
     def _load(self, path):
@@ -194,7 +194,11 @@ class SoundLoader(ResourceLoader):
         try:
             return pygame.mixer.Sound(path)
         except pygame.error as err:
-            if not err.args[0].startswith('Unable to open file'):
+            if not err.args[0].startswith((
+                'Unable to open file',
+                'Unknown WAVE format tag',
+                'MPEG formats not supported',
+            )):
                 raise
             from .soundfmt import identify
             try:
@@ -269,7 +273,7 @@ def getfont(
         font = ptext._font_cache.get(key)
         if font:
             return font
-        font = pygame.font.Font(fontname, fontsize)
+        font = pygame.font.SysFont(sysfontname, fontsize)
     else:
         font = fonts.load(fontname, fontsize)
 
