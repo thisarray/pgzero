@@ -663,8 +663,24 @@ function test_collidepoint_arguments() {
 
   test.assertFalse(a.collidepoint());
   test.assertFalse(a.collidepoint(a.left));
-  test.assertTrue(a.collidepoint([a.left, a.top]));
-  test.assertTrue(a.collidepoint({x: a.left, y: a.top}));
+
+  test.assertTrue(a.collidepoint([a.left, a.top]),
+                  "a does not collide with point (left,top)");
+  test.assertFalse(a.collidepoint([a.left - 1, a.top]),
+                   "a collides with point (left-1,top)");
+  test.assertFalse(a.collidepoint([a.left, a.top - 1]),
+                   "a collides with point (left,top-1)");
+  test.assertFalse(a.collidepoint([a.left - 1, a.top - 1]),
+                   "a collides with point (left-1,top-1)");
+
+  test.assertTrue(a.collidepoint({x: a.right - 1, y: a.bottom - 1}),
+                  "a does not collide with point (right-1,bottom-1)");
+  test.assertFalse(a.collidepoint({x: a.right, y: a.bottom}),
+                   "a collides with point (right,bottom)");
+  test.assertFalse(a.collidepoint({x: a.right - 1, y: a.bottom}),
+                   "a collides with point (right-1,bottom)");
+  test.assertFalse(a.collidepoint({x: a.right, y: a.bottom - 1}),
+                   "a collides with point (right,bottom-1)");
 }
 
 function test_colliderect() {
