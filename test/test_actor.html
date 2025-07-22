@@ -362,6 +362,27 @@ function test_set_center_and_anchor() {
   test.assertEqual(a.posy, 100 - Math.floor(a.height / 2) + 30);
 }
 
+function test_right_angle() {
+  let a = new Actor('alien');
+  test.assertEqual(a.name, 'alien');
+  test.assertEqual(a.angle, 0);
+  test.assertEqual(a.opacity, 1);
+  test.assertEqual(a.topleft, [0, 0]);
+  test.assertEqual(a.pos, [33, 46]);
+  test.assertEqual(a.width, 66);
+  test.assertEqual(a.height, 92);
+  a.angle += 90;
+  // The angle has changed but other attributes have not
+  // because the Actor instance is rotated and not a surface
+  test.assertEqual(a.name, 'alien');
+  test.assertEqual(a.angle, 90);
+  test.assertEqual(a.opacity, 1);
+  test.assertEqual(a.topleft, [0, 0]);
+  test.assertEqual(a.pos, [33, 46]);
+  test.assertEqual(a.width, 66);
+  test.assertEqual(a.height, 92);
+}
+
 /*
  * An actor's pos must not drift with continued small rotation.
  */
@@ -369,8 +390,13 @@ function test_rotation() {
   let a = new Actor('alien');
   a.pos = [100, 100];
   for (let angle = 0; angle < 360; angle++) {
-    a.angle += 1;
+    a.angle = angle;
+    test.assertEqual(a.name, 'alien');
+    test.assertEqual(a.angle, angle);
+    test.assertEqual(a.opacity, 1);
     test.assertEqual(a.pos, [100, 100]);
+    test.assertEqual(a.width, 66);
+    test.assertEqual(a.height, 92);
   }
 }
 
