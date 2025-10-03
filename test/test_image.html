@@ -41,26 +41,14 @@ The game screen appears here if your browser supports the Canvas API.
 
 <form>
 <label>Choose an image:
-<select id="imageSelect">
-  <option selected>None</option>
-  <option>alien</option>
-  <option>expected_alien_blit</option>
-  <option>expected_circle</option>
-  <option>expected_filled_circle</option>
-  <option>expected_filled_polygon</option>
-  <option>expected_filled_rect</option>
-  <option>expected_gradient</option>
-  <option>expected_line</option>
-  <option>expected_polygon</option>
-  <option>expected_rect</option>
-  <option>expected_wrapped_gradient_text</option>
-</select>
+<select id="imageSelect"></select>
 </label>
 </form>
 
 <script>
 const context = document.querySelector('#screen').getContext('2d');
-document.querySelector('#imageSelect').addEventListener('change', (event) => {
+const select = document.querySelector('#imageSelect');
+select.addEventListener('change', (event) => {
   context.clearRect(0, 0, 200, 200);
   let name = event.target.value;
   if (name in images) {
@@ -75,6 +63,18 @@ document.querySelector('#imageSelect').addEventListener('change', (event) => {
 window.addEventListener('load', (event) => {
   screen.init('#foobar');
   console.dir(images);
+
+  // Dynamically build the list of images
+  let option = document.createElement('option');
+  option.setAttribute('value', 'None');
+  option.appendChild(document.createTextNode('None'));
+  select.appendChild(option);
+  for (const name of Object.getOwnPropertyNames(images)) {
+    option = document.createElement('option');
+    option.setAttribute('value', name);
+    option.appendChild(document.createTextNode(name));
+    select.appendChild(option);
+  }
 });
 </script>
 </body>
