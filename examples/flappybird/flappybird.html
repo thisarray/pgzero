@@ -214,7 +214,7 @@ function update_pipes() {
 function update_bird() {
   let uy = bird.vy;
   bird.vy += GRAVITY;
-  bird.posy += Math.floor((uy + bird.vy) / 2);
+  bird.posy += (uy + bird.vy) / 2;
   bird.posx = 75;
 
   if (!bird.dead) {
@@ -256,7 +256,7 @@ function draw() {
   pipe_top.draw();
   pipe_bottom.draw();
   bird.draw();
-  screen.draw.text(bird.score.toFixed(0), {
+  screen.draw.text(bird.score.toFixed(), {
     color: 'white',
     midtop: [Math.floor(WIDTH / 2), 10],
     fontsize: 70,
