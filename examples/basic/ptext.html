@@ -315,7 +315,7 @@ function draw() {
     let rect = buttonrects[j],
         name = buttonnames[j],
         cost = buttoncosts[j],
-        text = `${ name }: ${ cost.toFixed(0) }\u00A0clunks`,
+        text = `${ name }: ${ cost.toFixed() }\u00A0clunks`,
         color = (cost <= score) ? "white" : "#666666",
         box = rect.inflate(-16, -16);
     screen.draw.filled_rect(rect, "#553300");
@@ -330,10 +330,10 @@ function draw() {
 
   // Draw the HUD
   let hudtext = [
-    `time played: ${ t.toFixed(0) }`,
-    `clunks: ${ score.toFixed(0) }`,
-    `all-time clunks: ${ totalscore.toFixed(0) }`,
-    `clunks per second: ${ clunkers.toFixed(0) }`
+    `time played: ${ t.toFixed() }`,
+    `clunks: ${ score.toFixed() }`,
+    `all-time clunks: ${ totalscore.toFixed() }`,
+    `clunks per second: ${ clunkers.toFixed() }`
   ].join("\n");
   screen.draw.text(hudtext, {
     topright: [WIDTH - 10, 120],
