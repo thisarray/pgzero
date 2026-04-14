@@ -274,7 +274,7 @@ function on_key_down(key) {
       reset_bike();
     }
   }
-  else if (DIRECTIONS.has(key) && (key != bike.reverse)) {
+  else if (DIRECTIONS.has(key) && (key !== bike.reverse)) {
     let {angle, v, reverse} = DIRECTIONS.get(key);
     bike.angle = angle;
     bike.v = v;
