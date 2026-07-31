@@ -234,6 +234,13 @@ function test_calculateAnchor() {
 function test_actor() {
   let a;
   try {
+    a = new Actor(42);
+    console.assert(false, 'TypeError not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
     a = new Actor('foobar');
     console.assert(false, 'RangeError not raised.');
   }
@@ -246,6 +253,13 @@ function test_name() {
   let a = new Actor('alien');
   test.assertEqual(a._name, 'alien');
   test.assertEqual(a.name, 'alien');
+  try {
+    a.name = 42;
+    console.assert(false, 'TypeError not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
   try {
     a.name = 'foobar';
     console.assert(false, 'RangeError not raised.');
