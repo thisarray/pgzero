@@ -462,6 +462,130 @@ function test_calculated_attributes() {
   test.assertEqual([a.right, a.centery], a.midright);
 }
 
+function test_calculated_attributes_wrong_type() {
+  let a = new Actor('alien');
+
+  try {
+    a.x = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.y = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.left = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.right = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.top = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.bottom = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.centerx = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.centery = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.topleft = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.bottomleft = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.topright = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.bottomright = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.center = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.midleft = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.midright = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.midtop = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+  try {
+    a.midbottom = 'foobar';
+    console.assert(false, 'Error not raised.');
+  }
+  catch (error) {
+    test.assertTrue(error instanceof TypeError);
+  }
+}
+
 function test_position() {
   let a = new Actor('alien'),
       midx = a.left + Math.floor(a.width / 2),
