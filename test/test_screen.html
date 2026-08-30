@@ -66,6 +66,14 @@ The game screen appears here if your browser supports the Canvas API.
 <output></output>
 </section>
 
+<section id="test_fill_red" class="test">
+<h2>test_fill_red</h2>
+
+<h3 class="actual">Actual</h3>
+
+<output></output>
+</section>
+
 <section id="test_fill_gradient" class="test">
 <h2>test_fill_gradient</h2>
 
@@ -295,6 +303,46 @@ function test_transparent() {
 
     screen.draw.filled_rect(new Rect([0, 0], [100, 100]), color);
     appendScreen('test_transparent');
+  }
+}
+
+function test_fill_red() {
+  for (const color of [
+    'red',
+    'Red',
+    'RED',
+    '#f00',
+    '#F00',
+    '#f00f',
+    '#F00f',
+    '#f00F',
+    '#F00F',
+    '#ff0000',
+    '#FF0000',
+    '#ff0000ff',
+    '#FF0000ff',
+    '#ff0000FF',
+    '#FF0000FF',
+    'rgb(255, 0, 0)',
+    'rgba(255, 0, 0, 1)',
+    'RGB(255, 0, 0)',
+    'RGBA(255, 0, 0, 1)',
+    'rgb(255 0 0)',
+    'rgba(255 0 0 / 1)',
+    'RGB(255 0 0)',
+    'RGBA(255 0 0 / 1)',
+    'rgba(255, 0, 0, 100%)',
+    'RGBA(255, 0, 0, 100%)',
+    'rgba(255 0 0 / 100%)',
+    'RGBA(255 0 0 / 100%)',
+    [255, 0, 0],
+    [255, 0, 0, 255]]) {
+    screen.clear(color);
+    appendScreen('test_fill_red');
+
+    // Test filling the screen with red
+    screen.fill(color);
+    appendScreen('test_fill_red');
   }
 }
 
