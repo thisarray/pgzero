@@ -74,6 +74,14 @@ The game screen appears here if your browser supports the Canvas API.
 <output></output>
 </section>
 
+<section id="test_fill_green" class="test">
+<h2>test_fill_green</h2>
+
+<h3 class="actual">Actual</h3>
+
+<output></output>
+</section>
+
 <section id="test_fill_gradient" class="test">
 <h2>test_fill_gradient</h2>
 
@@ -343,6 +351,46 @@ function test_fill_red() {
     // Test filling the screen with red
     screen.fill(color);
     appendScreen('test_fill_red');
+  }
+}
+
+function test_fill_green() {
+  for (const color of [
+    'lime',
+    'Lime',
+    'LIME',
+    '#0f0',
+    '#0F0',
+    '#0f0f',
+    '#0F0f',
+    '#0f0F',
+    '#0F0F',
+    '#00ff00',
+    '#00FF00',
+    '#00ff00ff',
+    '#00FF00ff',
+    '#00ff00FF',
+    '#00FF00FF',
+    'rgb(0, 255, 0)',
+    'rgba(0, 255, 0, 1)',
+    'RGB(0, 255, 0)',
+    'RGBA(0, 255, 0, 1)',
+    'rgb(0 255 0)',
+    'rgba(0 255 0 / 1)',
+    'RGB(0 255 0)',
+    'RGBA(0 255 0 / 1)',
+    'rgba(0, 255, 0, 100%)',
+    'RGBA(0, 255, 0, 100%)',
+    'rgba(0 255 0 / 100%)',
+    'RGBA(0 255 0 / 100%)',
+    [0, 255, 0],
+    [0, 255, 0, 255]]) {
+    screen.clear(color);
+    appendScreen('test_fill_green');
+
+    // Test filling the screen with green
+    screen.fill(color);
+    appendScreen('test_fill_green');
   }
 }
 
