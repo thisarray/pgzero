@@ -141,9 +141,8 @@ const test = (function () {
       console.assert(result, msg);
       return result;
     },
-    assertRaises() {
-      let args = Array.from(arguments),
-          errorType = args.shift(),
+    assertRaises(...args) {
+      let errorType = args.shift(),
           fn = args.shift();
       try {
         fn(...args);
