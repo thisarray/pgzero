@@ -206,7 +206,7 @@ const canvas = document.querySelector('#screen');
 const yellow = [255, 255, 0];
 
 /*
- * Append an image of the screen to output.
+ * Append an image of the screen to the output element under the element with id.
  */
 function appendScreen(id) {
   let parent = document.querySelector(`#${ id }`),
@@ -214,7 +214,7 @@ function appendScreen(id) {
   if (parent != null) {
     output = parent.querySelector('output');
     if (output != null) {
-      let image = document.createElement('img');
+      image = document.createElement('img');
       image.src = canvas.toDataURL();
       output.appendChild(image);
     }
